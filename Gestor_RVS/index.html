@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestor RVS - Escola Dr. Romildo Veloso e Silva</title>
+    
+    <!-- Fonte Inter (Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons (Ícones Modernos e Leves) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- CSS Principal -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+    <!-- 1. TELA DE LOGIN -->
+    <div id="login-view" class="view-active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <i class="ph ph-graduation-cap logo-icon"></i>
+                    <h2>Gestor RVS</h2>
+                    <p>Escola Estadual Dr. Romildo Veloso e Silva</p>
+                </div>
+                <form id="login-form">
+                    <div class="input-group">
+                        <label for="login-email">E-mail</label>
+                        <div class="input-wrapper">
+                            <i class="ph ph-envelope"></i>
+                            <input type="email" id="login-email" placeholder="nome@escola.com.br" required>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">Senha</label>
+                        <div class="input-wrapper">
+                            <i class="ph ph-lock"></i>
+                            <input type="password" id="login-password" placeholder="Sua senha" required>
+                        </div>
+                    </div>
+                    <button type="submit" id="btn-login" class="btn-primary">Entrar no Sistema</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. APLICAÇÃO PRINCIPAL (Oculta até Logar) -->
+    <div id="app-view" class="view-hidden">
+        
+        <!-- MENU LATERAL (SIDEBAR) -->
+        <aside id="sidebar">
+            <div class="sidebar-logo">
+                <i class="ph ph-graduation-cap"></i>
+                <span>Gestor RVS</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-target="dashboard">
+                    <i class="ph ph-squares-four"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-target="turmas">
+                    <i class="ph ph-users-three"></i>
+                    <span>Turmas & Alunos</span>
+                </a>
+                <a href="#" class="nav-item" data-target="frequencia">
+                    <i class="ph ph-calendar-check"></i>
+                    <span>Frequência</span>
+                </a>
+                <a href="#" class="nav-item" data-target="calendario">
+                    <i class="ph ph-calendar"></i>
+                    <span>Calendário Letivo</span>
+                </a>
+                <a href="#" class="nav-item" data-target="ocorrencias">
+                    <i class="ph ph-warning-circle"></i>
+                    <span>Ocorrências</span>
+                </a>
+                <a href="#" class="nav-item" data-target="whatsapp">
+                    <i class="ph ph-whatsapp-logo"></i>
+                    <span>Comunicados Web</span>
+                </a>
+                <a href="#" class="nav-item" data-target="relatorios">
+                    <i class="ph ph-chart-pie-slice"></i>
+                    <span>Relatórios</span>
+                </a>
+                <a href="#" class="nav-item" data-target="permissoes">
+                    <i class="ph ph-shield-check"></i>
+                    <span>Acesso & Permissões</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- ÁREA DE CONTEÚDO (MESA DE TRABALHO) -->
+        <div id="main-wrapper">
+            
+            <!-- HEADER (TOPBAR) -->
+            <header id="topbar">
+                <div class="topbar-search">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" placeholder="Buscar alunos ou turmas..." id="global-search">
+                </div>
+                
+                <div class="topbar-actions">
+                    <button class="icon-btn" aria-label="Notificações">
+                        <i class="ph ph-bell"></i>
+                        <span class="badge">3</span>
+                    </button>
+                    
+                    <div class="user-profile-menu" id="toggle-profile-menu">
+                        <img src="https://ui-avatars.com/api/?name=Admin+Escola&background=1E3A8A&color=fff" alt="Perfil" class="avatar" id="header-avatar">
+                        <div class="user-info">
+                            <span class="user-name">Admin Escola</span>
+                            <span class="user-role">Diretoria</span>
+                        </div>
+                        <i class="ph ph-caret-down"></i>
+                        
+                        <!-- Dropdown do Perfil -->
+                        <div class="dropdown-menu" id="profile-dropdown">
+                            <a href="#" id="meu-perfil-btn"><i class="ph ph-user"></i> Meu Perfil</a>
+                            <a href="#" id="config-btn"><i class="ph ph-gear"></i> Configurações</a>
+                            <div class="divider"></div>
+                            <a href="#" id="btn-logout" class="text-danger"><i class="ph ph-sign-out"></i> Sair</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTEÚDO DA PÁGINA (SPA VIEWS) -->
+            <main id="content">
+
+                <!-- VIEW: DASHBOARD -->
+                <section id="dashboard" class="page-section section-active">
+                    <div class="section-header">
+                        <div>
+                            <h1>Visão Geral</h1>
+                            <p>Resumo em tempo real das atividades escolares.</p>
+                        </div>
+                        <button class="btn-primary" onclick="alert('Recurso a ser integrado: Ações Globais')"><i class="ph ph-plus"></i> Nova Ação</button>
+                    </div>
+
+                    <div class="dashboard-cards">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-blue-light"><i class="ph ph-student"></i></div>
+                            <div class="stat-details">
+                                <span class="stat-title">Alunos Matriculados</span>
+                                <span class="stat-value" id="dash-total-alunos">-</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-green-light"><i class="ph ph-check-circle"></i></div>
+                            <div class="stat-details">
+                                <span class="stat-title">Última Presença Média</span>
+                                <span class="stat-value" id="dash-presenca-hoje">-</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-yellow-light"><i class="ph ph-warning"></i></div>
+                            <div class="stat-details">
+                                <span class="stat-title">Ocorrências Mês</span>
+                                <span class="stat-value" id="dash-ocorrencias-mes">-</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-purple-light"><i class="ph ph-chalkboard-teacher"></i></div>
+                            <div class="stat-details">
+                                <span class="stat-title">Turmas Ativas</span>
+                                <span class="stat-value" id="dash-turmas-ativas">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-md" style="border-left: 4px solid #DC2626;">
+                        <h3 style="color: #DC2626; margin-bottom: 1rem;"><i class="ph ph-warning-circle"></i> Alerta Crítico: Risco de Evasão</h3>
+                        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.875rem;">Alunos detectados com elevado número de faltas consecutivas recentes.</p>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Turma</th>
+                                    <th class="text-center">Total Faltas</th>
+                                    <th class="text-right">Ação Recomendada</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-evasao-tbody">
+                                <tr><td colspan="4" class="text-center text-muted">Carregando métricas do sistema...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card mt-md" style="border-left: 4px solid #F59E0B;">
+                        <h3 style="color: #D97706; margin-bottom: 1rem;"><i class="ph ph-warning"></i> Alerta Crítico: Risco de Saída sem Permissão (Matando Aula)</h3>
+                        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.875rem;">Alunos com presença em apenas um dos turnos de registro (P e F ou F e P).</p>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Turma</th>
+                                    <th class="text-center">Data(s) da Ocorrência</th>
+                                    <th class="text-right">Ação Recomendada</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-saida-indevida-tbody">
+                                <tr><td colspan="4" class="text-center text-muted">Carregando métricas do sistema...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card mt-md" style="border-left: 4px solid #1E3A8A;">
+                        <h3 style="color: #1E3A8A; margin-bottom: 1rem;"><i class="ph ph-calendar-check"></i> Alerta de Retorno: Alunos Suspensos</h3>
+                        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.875rem;">Alunos com retorno de suspensão agendado para o dia atual.</p>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Turma</th>
+                                    <th class="text-center">Status do Retorno</th>
+                                    <th class="text-right">Ação Recomendada</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-retorno-suspensao-tbody">
+                                <tr><td colspan="4" class="text-center text-muted">Carregando métricas do sistema...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- VIEW: TURMAS & ALUNOS -->
+                <section id="turmas" class="page-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Turmas e Alunos</h1>
+                            <p>Gerenciamento de matrículas e turmas.</p>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <input type="file" id="input-importar-alunos" accept=".csv" hidden>
+                            <button class="btn-outline" id="btn-importar-alunos"><i class="ph ph-upload-simple"></i> Importar Alunos</button>
+                            <button class="btn-primary"><i class="ph ph-user-plus"></i> Novo Aluno</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-md filter-bar" style="display: flex; gap: 2rem; align-items: center; padding: 1rem 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <label for="select-turma-alunos" style="font-weight: 500;">Selecione a Turma:</label>
+                            <select class="input-select" id="select-turma-alunos" style="min-width: 200px;">
+                                <option value="">Todas as Turmas</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 1rem; align-items: center; flex: 1; max-width: 350px;">
+                            <label for="search-nome-alunos" style="font-weight: 500; white-space: nowrap;">Buscar por Nome:</label>
+                            <input type="text" id="search-nome-alunos" class="input-select" placeholder="Ex: João Alves" style="width: 100%;">
+                        </div>
+                        <div style="margin-left: auto;">
+                            <button class="btn-outline text-danger" id="btn-excluir-base-alunos" style="border-color: var(--danger);"><i class="ph ph-trash"></i> Excluir Alunos Exibidos</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Turma</th>
+                                    <th>E-mail / Acesso</th>
+                                    <th class="text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-alunos-tbody">
+                                <!-- Os alunos importados aparecerão aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- VIEW: FREQUÊNCIA -->
+                <section id="frequencia" class="page-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Registro de Frequência</h1>
+                            <p>Controle de entrada e saída diária.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-md filter-bar" style="display: flex; gap: 1rem; align-items: flex-end; padding: 1rem 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label for="select-turno-freq" style="font-weight: 500;">Turno:</label>
+                            <select class="input-select" id="select-turno-freq" style="min-width: 140px;">
+                                <option value="">-- Todos --</option>
+                                <option value="Manhã">Manhã</option>
+                                <option value="Tarde">Tarde</option>
+                                <option value="Noite">Noite</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label for="select-turma-freq" style="font-weight: 500;">Turma:</label>
+                            <select class="input-select" id="select-turma-freq" style="min-width: 140px;">
+                                <option value="">-- Turno 1º --</option>
+                            </select>
+                        </div>
+                        <div style="width: 1px; height: 30px; background-color: var(--border-color); margin: 0 0.5rem;"></div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label for="select-mes-freq" style="font-weight: 500;">Mês:</label>
+                            <select class="input-select" id="select-mes-freq" style="min-width: 140px;">
+                                <option value="">-- Mês --</option>
+                                <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option><option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option><option value="7">Agosto</option><option value="8">Setembro</option><option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label for="select-dia-freq" style="font-weight: 500;">Dia Letivo:</label>
+                            <select class="input-select" id="select-dia-freq" style="min-width: 140px;">
+                                <option value="">-- Mês 1º --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card freq-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th class="text-center">Entrada</th>
+                                    <th class="text-center">Saída</th>
+                                    <th class="text-center">Situação Final</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-freq-tbody">
+                                <tr><td colspan="4" class="text-center text-muted">Selecione uma Turma para abrir o diário de frequência.</td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <div style="text-align: right; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+                            <span class="text-muted" id="status-consolidacao" style="font-size: 0.9rem;">Pronto para iniciar chamada.</span>
+                            <button class="btn-primary" id="btn-consolidar-chamada"><i class="ph ph-floppy-disk"></i> Consolidar Chamada do Dia</button>
+                        </div>
+                    </div>
+                </section>
+                <!-- VIEW: CALENDÁRIO LETIVO -->
+                <section id="calendario" class="page-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Calendário Letivo 2026</h1>
+                            <p>Gestão de dias letivos, avaliações, feriados e eventos escolares.</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <button class="btn-outline" id="btn-prev-month"><i class="ph ph-caret-left"></i></button>
+                            <h2 id="calendar-month-display" style="min-width: 155px; text-align: center; font-size: 1.25rem;">Janeiro 2026</h2>
+                            <button class="btn-outline" id="btn-next-month"><i class="ph ph-caret-right"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="card mb-md" style="padding: 0; overflow: hidden;">
+                        <div class="calendar-weekdays">
+                            <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                        </div>
+                        <div id="calendar-grid" class="calendar-grid">
+                            <!-- Os dias do mês serão preenchidos via JS -->
+                        </div>
+                    </div>
+
+                    <div class="card" style="display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center;">
+                        <span style="font-weight: 600; color: var(--text-muted);">Legenda Cíclica (Clique no dia):</span>
+                        <div class="legend-item"><span class="legend-color letivo"></span> Dia Letivo</div>
+                        <div class="legend-item"><span class="legend-color feriado"></span> Feriado (Com Legenda)</div>
+                        <div class="legend-item"><span class="legend-color evento"></span> Dia Letivo c/ Legenda de Evento</div>
+                        <div class="legend-item"><span class="legend-color recesso"></span> Recesso / Fim de Semana</div>
+                    </div>
+                </section>
+
+                <!-- VIEW: OCORRÊNCIAS -->
+                <section id="ocorrencias" class="page-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Ocorrências Disciplinares</h1>
+                            <p>Registro de advertências e suspensões e histórico do aluno.</p>
+                        </div>
+                    </div>
+
+                    <div class="card mb-md filter-bar" style="display: flex; gap: 1rem; align-items: flex-end; padding: 1rem 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label for="select-turno-ocor" style="font-weight: 500;">Turno:</label>
+                            <select class="input-select" id="select-turno-ocor" style="min-width: 140px;">
+                                <option value="">-- Todos --</option>
+                                <option value="Manhã">Manhã</option>
+                                <option value="Tarde">Tarde</option>
+                                <option value="Noite">Noite</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label for="select-turma-ocor" style="font-weight: 500;">Turma:</label>
+                            <select class="input-select" id="select-turma-ocor" style="min-width: 140px;">
+                                <option value="">-- Selecione o Turno --</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label for="select-aluno-ocor" style="font-weight: 500;">Aluno:</label>
+                            <select class="input-select" id="select-aluno-ocor" style="min-width: 250px;">
+                                <option value="">-- Selecione a Turma primeiro --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Formulário de Cadastro (Oculto até selecionar aluno) -->
+                    <div id="form-ocorrencia-container" class="card mb-md bg-light hidden">
+                        <h3>Registrar Nova Ocorrência para <span id="nome-aluno-ocorrencia" class="text-primary" style="font-weight:600;"></span></h3>
+                        <form id="form-nova-ocorrencia" class="mt-md">
+                            <div class="grid-2-col" style="align-items: start;">
+                                <div class="input-group">
+                                    <label>Tipo de Ocorrência</label>
+                                    <select id="ocor-tipo" class="input-select" required>
+                                        <option value="Advertência">Advertência Escrita</option>
+                                        <option value="Suspensão">Suspensão</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Comunicar aos Pais?</label>
+                                    <select id="ocor-comunicar" class="input-select" required>
+                                        <option value="Sim">Sim - Exige Ciência</option>
+                                        <option value="Não">Não - Tratativa Interna</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid-2-col hidden mt-sm" id="ocor-suspensao-dates" style="align-items: start;">
+                                <div class="input-group">
+                                    <label>Data Inicial (Suspensão)</label>
+                                    <input type="date" id="ocor-data-inicio" class="input-select">
+                                </div>
+                                <div class="input-group">
+                                    <label>Data de Retorno Prevista</label>
+                                    <input type="date" id="ocor-data-retorno" class="input-select">
+                                </div>
+                            </div>
+                            <div class="input-group mt-sm">
+                                <label>Motivo / Digite a Ocorrência</label>
+                                <textarea id="ocor-motivo" rows="4" placeholder="Descreva detalhadamente o motivo da ocorrência..." style="padding:0.75rem 1rem; border:1px solid var(--border-color); border-radius:6px; font-family: Inter; width: 100%;" required></textarea>
+                            </div>
+                            <div class="form-actions mt-md" style="display: flex; justify-content: flex-end;">
+                                <button type="submit" class="btn-primary" style="width: auto;"><i class="ph ph-floppy-disk"></i> Salvar Ocorrência</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tabela de Histórico -->
+                    <div class="card" id="history-ocorrencia-container">
+                        <h3 style="margin-bottom: 1rem;">Histórico Disciplinar</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%">Data e Hora</th>
+                                    <th style="width: 15%">Tipo</th>
+                                    <th style="width: 40%">Motivo</th>
+                                    <th style="width: 20%">Registrado Por</th>
+                                    <th style="width: 10%" class="text-center">Pais</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-ocorrencias">
+                                <tr><td colspan="5" class="text-center text-muted">Selecione um aluno acima para visualizar o histórico.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- VIEW: WHATSAPP -->
+                <section id="whatsapp" class="page-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Comunicados via WhatsApp</h1>
+                            <p>Disparo de mensagens para responsáveis.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="whatsapp-container">
+                        <div class="card flex-1">
+                            <h3>Nova Mensagem</h3>
+                            <form id="form-whatsapp">
+                                <div class="input-group">
+                                    <label>Destinatários</label>
+                                    <select class="input-select" id="zap-destinatario">
+                                        <option value="todos">Todos os Responsáveis</option>
+                                        <option value="turma">Por Turma...</option>
+                                        <option value="individual">Aluno Específico...</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Mensagem</label>
+                                    <textarea id="zap-texto" rows="5" placeholder="Digite o comunicado aqui..."></textarea>
+                                </div>
+                                
+                                <div class="attachment-zone" id="drop-zone">
+                                    <input type="file" id="zap-anexo" accept="image/*, application/pdf" hidden>
+                                    <div class="drop-content" id="drop-content">
+                                        <i class="ph ph-upload-simple"></i>
+                                        <p>Clique ou arraste um arquivo para anexar</p>
+                                        <span>JPG, PNG ou PDF (Máx 5MB)</span>
+                                    </div>
+                                    <div class="preview-zone hidden" id="preview-zone">
+                                        <img id="file-preview-img" src="" alt="Preview">
+                                        <div class="file-info">
+                                            <span id="file-name">arquivo.jpg</span>
+                                            <button type="button" class="btn-icon text-danger" id="btn-remove-file"><i class="ph ph-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-actions mt-md">
+                                    <button type="button" class="btn-primary w-full" id="btn-enviar-zap">
+                                        <i class="ph ph-paper-plane-right"></i> Enviar Mensagem
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="card whatsapp-preview-card bg-light">
+                            <h3>Pré-visualização</h3>
+                            <div class="chat-mockup">
+                                <div class="chat-bubble">
+                                    <p id="chat-preview-text">Digite algo para visualizar...</p>
+                                    <div id="chat-preview-image" class="hidden">
+                                        <img src="" alt="Visualização do anexo">
+                                    </div>
+                                    <span class="chat-time">10:45</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="relatorios" class="page-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Central de Exportações</h1>
+                            <p>Geração de relatórios gerenciais e download de bases do sistema para Microsoft Excel (CSV).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2-col">
+                        <!-- Relatório 1: Alunos -->
+                        <div class="card export-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="ph ph-users-three text-primary"></i> Base Completa de Alunos
+                                </h3>
+                                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.5rem;">
+                                    Exporta a lista contendo todos os matriculados na base do Gestor RVS, contendo suas turmas.
+                                </p>
+                            </div>
+                            <button class="btn-outline w-full" id="btn-export-alunos">
+                                <i class="ph ph-download-simple"></i> Baixar Dados de Alunos (.csv)
+                            </button>
+                        </div>
+                        
+                        <!-- Relatório 2: Frequencia -->
+                        <div class="card export-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="ph ph-calendar-check text-primary"></i> Diários de Frequência
+                                </h3>
+                                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.5rem;">
+                                    Exporta a consolidação das chamadas realizadas pelos professores, tabuladas dia a dia.
+                                </p>
+                            </div>
+                            <button class="btn-outline w-full" id="btn-export-freq">
+                                <i class="ph ph-download-simple"></i> Baixar Frequências (.csv)
+                            </button>
+                        </div>
+                        
+                        <!-- Relatório 3: Ocorrencias -->
+                        <div class="card export-card" style="display: flex; flex-direction: column; justify-content: space-between; grid-column: span 1 / span 2;">
+                            <div>
+                                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="ph ph-warning-circle text-primary"></i> Histórico de Disciplina
+                                </h3>
+                                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.5rem;">
+                                    Uma planilha sensível contemplando as atitudes corretivas (suspensões) emitidas aos alunos.
+                                </p>
+                            </div>
+                            <button class="btn-outline" style="width: auto; align-self: flex-start" id="btn-export-ocorrencias">
+                                <i class="ph ph-download-simple"></i> Baixar Ocorrências Disciplinares (.csv)
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="permissoes" class="page-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Acesso & Permissões</h1>
+                            <p>Gestão de usuários autorizados no sistema escolar.</p>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <input type="file" id="input-importar-csv" accept=".csv" hidden>
+                            <button class="btn-outline" id="btn-importar-usuarios"><i class="ph ph-upload-simple"></i> Importar Usuários</button>
+                            <button class="btn-primary" id="btn-novo-usuario"><i class="ph ph-user-plus"></i> Novo Usuário</button>
+                        </div>
+                    </div>
+
+                    <div class="card bg-light mb-md hidden" id="form-usuario-container">
+                        <h3>Cadastrar Novo Usuário</h3>
+                        <form id="form-novo-usuario" class="mt-md">
+                            <div class="grid-2-col">
+                                <div class="input-group">
+                                    <label for="usr-nome">Nome Completo</label>
+                                    <div class="input-wrapper">
+                                        <i class="ph ph-user"></i>
+                                        <input type="text" id="usr-nome" placeholder="Nome Completo" required>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label for="usr-email">E-mail de Acesso</label>
+                                    <div class="input-wrapper">
+                                        <i class="ph ph-envelope"></i>
+                                        <input type="email" id="usr-email" placeholder="usuario@escola.com.br" required>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label for="usr-senha">Senha Provisória</label>
+                                    <div class="input-wrapper">
+                                        <i class="ph ph-lock"></i>
+                                        <input type="password" id="usr-senha" placeholder="Senha segura" required>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label for="usr-funcao">Função no Sistema</label>
+                                    <select id="usr-funcao" class="input-select" required style="width: 100%;">
+                                        <option value="">Selecione o papel...</option>
+                                        <option value="manager">Manager (Diretoria)</option>
+                                        <option value="coordenacao">Coordenação</option>
+                                        <option value="secretaria">Secretaria</option>
+                                        <option value="professor">Professor(a)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions mt-md" style="display: flex; gap: 1rem; justify-content: flex-end;">
+                                <button type="button" class="btn-outline" id="btn-cancelar-usr">Cancelar</button>
+                                <button type="submit" class="btn-primary">Criar Acesso</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuário</th>
+                                    <th>E-mail</th>
+                                    <th>Função</th>
+                                    <th class="text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-usuarios-tbody">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Nenhum usuário cadastrado. Importe a base para popular acessos.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL DE PERFIL -->
+    <div class="modal-overlay hidden" id="perfil-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Meu Perfil</h2>
+                <button class="btn-close" id="btn-close-modal"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-edit-header">
+                    <div class="profile-pic-wrapper">
+                        <img src="https://ui-avatars.com/api/?name=Admin+Escola&background=1E3A8A&color=fff" id="modal-avatar" alt="Avatar">
+                        <button class="btn-edit-pic" aria-label="Editar Foto"><i class="ph ph-camera"></i></button>
+                    </div>
+                </div>
+                <form id="form-perfil">
+                    <div class="input-group">
+                        <label>Nome Completo</label>
+                        <input type="text" value="Administrador da Escola">
+                    </div>
+                    <div class="input-group">
+                        <label>Cargo/Função</label>
+                        <input type="text" value="Diretoria" disabled>
+                    </div>
+                    <div class="input-group">
+                        <label>Biografia Curta</label>
+                        <textarea rows="3">Gestor focado em resultados educacionais.</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" id="btn-cancel-modal">Cancelar</button>
+                <button class="btn-primary" id="btn-save-modal">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Transfer Modal -->
+    <div class="modal-overlay hidden" id="transfer-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Transferir Aluno</h2>
+                <button class="btn-close" id="btn-close-transfer"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="transfer-student-name" style="font-weight: 600; margin-bottom: 1rem; color: var(--primary-blue);"></p>
+                <div class="input-group">
+                    <label for="select-new-class">Nova Turma do Aluno:</label>
+                    <select id="select-new-class" class="input-select"></select>
+                </div>
+
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Histórico de Transferências</h3>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table class="data-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>De</th>
+                                    <th>Para</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transfer-history-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" id="btn-cancel-transfer">Cancelar</button>
+                <button class="btn-primary" id="btn-confirm-transfer">Salvar e Transferir Frequência</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./js/app.js?v=4"></script>
+</body>
+</html>
