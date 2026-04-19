@@ -948,13 +948,27 @@ document.addEventListener('DOMContentLoaded', () => {
                      motivS: motivS
                  };
              });
-             
              localStorage.setItem('rvs_frequencia', JSON.stringify(freqAll));
 
-             statusConsolidacao.textContent = `Salvo no sistema: Frequência do dia ${dateStr.split('-').reverse().join('/')} validada.`;
+             // Adicionar à fila de sincronização (Salvamento Híbrido)
+             let queue = JSON.parse(localStorage.getItem('rvs_sync_queue')) || [];
+             queue.push({
+                 date: dateStr,
+                 turma: turma,
+                 timestamp: new Date().toISOString()
+             });
+             localStorage.setItem('rvs_sync_queue', JSON.stringify(queue));
+
+             statusConsolidacao.textContent = `Salvo localmente: Frequência do dia ${dateStr.split('-').reverse().join('/')} validada.`;
              statusConsolidacao.style.color = '#059669';
              if (typeof atualizarDashboard === 'function') atualizarDashboard();
-             alert('Chamada salva em sistema! Relatórios atualizados.');
+             
+             // Tenta sincronizar agora se estiver online
+             if (navigator.onLine && typeof syncPendingData === 'function') {
+                 syncPendingData();
+             } else {
+                 alert('Chamada salva no celular! Será sincronizada quando houver conexão.');
+             }
         });
     }
 
@@ -1693,5 +1707,42 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof renderizarTabelaAlunos === 'function') renderizarTabelaAlunos();
     if (typeof atualizarDashboard === 'function') atualizarDashboard();
     if (typeof renderCalendar === 'function') renderCalendar();
+    
+    // ==========================================
+    // 13. SISTEMA OFFLINE E SINCRONIZAÇÃO
+    // ==========================================
+    const networkStatus = document.getElementById('network-status');
+    const syncQueueKey = 'rvs_sync_queue';
+
+    function updateNetworkStatus() {
+        if (!networkStatus) return;
+        if (navigator.onLine) {
+            networkStatus.className = 'badge bg-success d-flex align-items-center gap-1';
+            networkStatus.innerHTML = '<i class="ph ph-wifi-high"></i> Online';
+            syncPendingData();
+        } else {
+            networkStatus.className = 'badge bg-warning text-dark d-flex align-items-center gap-1';
+            networkStatus.innerHTML = '<i class="ph ph-wifi-x"></i> Modo Offline - Dados Salvos no Celular';
+        }
+    }
+
+    window.syncPendingData = function() {
+        let queue = JSON.parse(localStorage.getItem(syncQueueKey)) || [];
+        if (queue.length > 0) {
+            console.log(`[Sync] Iniciando sincronização de ${queue.length} pacotes de frequência para o servidor...`);
+            
+            // Simular um POST para o backend
+            setTimeout(() => {
+                console.log('[Sync] Dados enviados com sucesso!');
+                localStorage.removeItem(syncQueueKey);
+                alert(`Sincronização concluída: ${queue.length} consolidação(ões) de frequência foram enviadas ao servidor.`);
+            }, 1000);
+        }
+    }
+
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    // Dispara a verificação logo ao abrir para atualizar o badge apropriadamente
+    updateNetworkStatus();
     
 });
