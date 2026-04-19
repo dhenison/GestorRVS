@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const passBox = document.getElementById('login-password');
         
         if (emailBox.value !== 'dhenison@admin.com' || passBox.value !== '123456') {
-            alert('Acesso negado. Credenciais exclusivas do Manager: dhenison@admin.com / 123456');
+            alert('Acesso negado. E-mail ou senha incorretos.');
             return;
         }
 
@@ -93,19 +93,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileMenuToggle = document.getElementById('toggle-profile-menu');
     const profileDropdown = document.getElementById('profile-dropdown');
 
-    // Abre/fecha dropdown ao clicar
-    profileMenuToggle.addEventListener('click', (e) => {
-        // Evitar que abra o modal de perfil se clicar no "Meu Perfil" dentro do dropdown
-        if (e.target.closest('#meu-perfil-btn') || e.target.closest('#btn-logout')) return;
-        
-        profileDropdown.classList.toggle('show');
-    });
-
-    // Fecha dropdown ao clicar fora
-    document.addEventListener('click', (e) => {
-        if (!profileMenuToggle.contains(e.target)) {
-            profileDropdown.classList.remove('show');
-        }
+    // O Dropdown de Perfil agora é manejado nativamente via Bootstrap 5 (data-bs-toggle="dropdown")
+    
+    // Auto-colapsar navbar no mobile ao clicar em um link
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const navbarCollapse = document.getElementById('navbarmenu');
+            if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+                const bsCollapse = new bootstrap.Collapse(navbarCollapse, { toggle: false });
+                bsCollapse.hide();
+            }
+        });
     });
 
     // Ação de Logout

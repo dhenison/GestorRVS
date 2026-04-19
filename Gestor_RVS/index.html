@@ -1,48 +1,66 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestor RVS - Escola Dr. Romildo Veloso e Silva</title>
     
-    <!-- Fonte Inter (Google Fonts) -->
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Fonte Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Phosphor Icons (Ícones Modernos e Leves) -->
+    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
     <!-- CSS Principal -->
     <link rel="stylesheet" href="./css/style.css">
+    
+    <style>
+        /* Ajustes específicos pós-Bootstrap */
+        body { font-family: 'Inter', sans-serif; }
+        .page-section { display: none; animation: fadeIn 0.3s ease; }
+        .section-active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Garantindo compatibilidade da barra nav do JS */
+        .nav-link.nav-item.active { font-weight: bold; border-bottom: 2px solid var(--bs-warning); color: var(--bs-warning) !important; }
+        /* Esconder views do JS auth */
+        .view-hidden { display: none !important; }
+        .view-active { display: flex; flex-direction: column; min-height: 100vh; }
+    </style>
 </head>
-<body>
+<body class="bg-body">
 
     <!-- 1. TELA DE LOGIN -->
-    <div id="login-view" class="view-active">
-        <div class="login-container">
-            <div class="login-card">
-                <div class="login-header">
-                    <i class="ph ph-graduation-cap logo-icon"></i>
-                    <h2>Gestor RVS</h2>
-                    <p>Escola Estadual Dr. Romildo Veloso e Silva</p>
+    <div id="login-view" class="view-active justify-content-center align-items-center bg-body-tertiary">
+        <div class="card shadow-lg border-0" style="width: 100%; max-width: 400px;">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <i class="ph ph-graduation-cap text-primary mb-2" style="font-size: 3rem;"></i>
+                    <h2 class="text-primary fw-bold">Gestor RVS</h2>
+                    <p class="text-secondary small">Escola Estadual Dr. Romildo Veloso e Silva</p>
                 </div>
                 <form id="login-form">
-                    <div class="input-group">
-                        <label for="login-email">E-mail</label>
-                        <div class="input-wrapper">
-                            <i class="ph ph-envelope"></i>
-                            <input type="email" id="login-email" placeholder="nome@escola.com.br" required>
+                    <div class="mb-3">
+                        <label for="login-email" class="form-label fw-medium">E-mail</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="ph ph-envelope"></i></span>
+                            <input type="email" id="login-email" class="form-control" placeholder="nome@escola.com.br" required>
                         </div>
                     </div>
-                    <div class="input-group">
-                        <label for="login-password">Senha</label>
-                        <div class="input-wrapper">
-                            <i class="ph ph-lock"></i>
-                            <input type="password" id="login-password" placeholder="Sua senha" required>
+                    <div class="mb-4">
+                        <label for="login-password" class="form-label fw-medium">Senha</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="ph ph-lock"></i></span>
+                            <input type="password" id="login-password" class="form-control" placeholder="Sua senha" required>
                         </div>
                     </div>
-                    <button type="submit" id="btn-login" class="btn-primary">Entrar no Sistema</button>
+                    <button type="submit" id="btn-login" class="btn btn-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
+                        Entrar no Sistema
+                    </button>
                 </form>
             </div>
         </div>
@@ -51,692 +69,517 @@
     <!-- 2. APLICAÇÃO PRINCIPAL (Oculta até Logar) -->
     <div id="app-view" class="view-hidden">
         
-        <!-- MENU LATERAL (SIDEBAR) -->
-        <aside id="sidebar">
-            <div class="sidebar-logo">
-                <i class="ph ph-graduation-cap"></i>
-                <span>Gestor RVS</span>
+        <!-- TOP NAVBAR BOOTSTRAP (Azul Marinho) -->
+        <nav class="navbar navbar-expand-lg border-bottom shadow-sm sticky-top" style="background-color: #1E3A8A;" data-bs-theme="dark">
+            <div class="container-fluid px-3 px-md-4">
+                <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                    <i class="ph ph-graduation-cap text-warning fs-3"></i>
+                    <span class="fw-bold">Gestor RVS</span>
+                </a>
+                
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarmenu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarmenu">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1 mt-3 mt-lg-0">
+                        <!-- O JS usa querySelectorAll('.nav-item'). Colocamos a classe junta para manter o data-target funcionando intacto. -->
+                        <li><a href="#" class="nav-link nav-item active" data-target="dashboard"><i class="ph ph-squares-four"></i> Dashboard</a></li>
+                        <li><a href="#" class="nav-link nav-item" data-target="turmas"><i class="ph ph-users-three"></i> Turmas & Alunos</a></li>
+                        <li><a href="#" class="nav-link nav-item" data-target="frequencia"><i class="ph ph-calendar-check"></i> Frequência</a></li>
+                        <li><a href="#" class="nav-link nav-item" data-target="calendario"><i class="ph ph-calendar"></i> Calendário</a></li>
+                        <li><a href="#" class="nav-link nav-item" data-target="ocorrencias"><i class="ph ph-warning-circle"></i> Ocorrências</a></li>
+                        <li><a href="#" class="nav-link nav-item" data-target="whatsapp"><i class="ph ph-whatsapp-logo"></i> Comunicados</a></li>
+                        <li><a href="#" class="nav-link nav-item" data-target="relatorios"><i class="ph ph-chart-pie-slice"></i> Relatórios</a></li>
+                        <li><a href="#" class="nav-link nav-item" data-target="permissoes"><i class="ph ph-shield-check"></i> Permissões</a></li>
+                    </ul>
+                    
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="input-group input-group-sm d-none d-lg-flex" style="width: 250px;">
+                            <span class="input-group-text"><i class="ph ph-magnifying-glass"></i></span>
+                            <input type="text" class="form-control" placeholder="Buscar alunos..." id="global-search">
+                        </div>
+                        
+                        <button class="btn btn-link link-body-emphasis position-relative p-0" aria-label="Notificações">
+                            <i class="ph ph-bell fs-4"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">3</span>
+                        </button>
+                        
+                        <div class="dropdown" id="toggle-profile-menu"> <!-- mantido ID pro JS se necessário, mas o BS5 cuida via data-bs -->
+                            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle link-body-emphasis gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="https://ui-avatars.com/api/?name=Admin+Escola&background=1E3A8A&color=fff" alt="Perfil" width="36" height="36" class="rounded-circle border" id="header-avatar">
+                                <div class="d-none d-sm-block text-start" style="line-height: 1.2;">
+                                    <div class="fw-semibold small">Admin Escola</div>
+                                    <div class="text-body-secondary" style="font-size: 0.75rem;">Diretoria</div>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" id="profile-dropdown">
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="#" id="meu-perfil-btn"><i class="ph ph-user"></i> Meu Perfil</a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="#" id="config-btn"><i class="ph ph-gear"></i> Dev: Limpar Dados</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger d-flex align-items-center gap-2" href="#" id="btn-logout"><i class="ph ph-sign-out"></i> Sair</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-target="dashboard">
-                    <i class="ph ph-squares-four"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="#" class="nav-item" data-target="turmas">
-                    <i class="ph ph-users-three"></i>
-                    <span>Turmas & Alunos</span>
-                </a>
-                <a href="#" class="nav-item" data-target="frequencia">
-                    <i class="ph ph-calendar-check"></i>
-                    <span>Frequência</span>
-                </a>
-                <a href="#" class="nav-item" data-target="calendario">
-                    <i class="ph ph-calendar"></i>
-                    <span>Calendário Letivo</span>
-                </a>
-                <a href="#" class="nav-item" data-target="ocorrencias">
-                    <i class="ph ph-warning-circle"></i>
-                    <span>Ocorrências</span>
-                </a>
-                <a href="#" class="nav-item" data-target="whatsapp">
-                    <i class="ph ph-whatsapp-logo"></i>
-                    <span>Comunicados Web</span>
-                </a>
-                <a href="#" class="nav-item" data-target="relatorios">
-                    <i class="ph ph-chart-pie-slice"></i>
-                    <span>Relatórios</span>
-                </a>
-                <a href="#" class="nav-item" data-target="permissoes">
-                    <i class="ph ph-shield-check"></i>
-                    <span>Acesso & Permissões</span>
-                </a>
-            </nav>
-        </aside>
+        </nav>
 
         <!-- ÁREA DE CONTEÚDO (MESA DE TRABALHO) -->
-        <div id="main-wrapper">
-            
-            <!-- HEADER (TOPBAR) -->
-            <header id="topbar">
-                <div class="topbar-search">
-                    <i class="ph ph-magnifying-glass"></i>
-                    <input type="text" placeholder="Buscar alunos ou turmas..." id="global-search">
+        <main id="content" class="container py-4 flex-grow-1">
+
+            <!-- VIEW: DASHBOARD -->
+            <section id="dashboard" class="page-section section-active">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                    <div>
+                        <h1 class="h3 fw-bold mb-1">Visão Geral</h1>
+                        <p class="text-secondary mb-0">Resumo em tempo real das atividades.</p>
+                    </div>
+                    <button class="btn btn-primary d-flex align-items-center gap-2" onclick="alert('Recurso a ser integrado: Ações Globais')"><i class="ph ph-plus"></i> Nova Ação</button>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center p-3 text-bg-primary bg-opacity-10 text-primary fs-3"><i class="ph ph-student"></i></div>
+                                <div>
+                                    <div class="text-secondary small fw-medium">Alunos Matriculados</div>
+                                    <div class="fs-4 fw-bold" id="dash-total-alunos">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center p-3 text-bg-success bg-opacity-10 text-success fs-3"><i class="ph ph-check-circle"></i></div>
+                                <div>
+                                    <div class="text-secondary small fw-medium">Última Presença Média</div>
+                                    <div class="fs-4 fw-bold" id="dash-presenca-hoje">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center p-3 text-bg-warning bg-opacity-10 text-warning fs-3"><i class="ph ph-warning"></i></div>
+                                <div>
+                                    <div class="text-secondary small fw-medium">Ocorrências Mês</div>
+                                    <div class="fs-4 fw-bold" id="dash-ocorrencias-mes">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center p-3 text-bg-info bg-opacity-10 text-info fs-3"><i class="ph ph-chalkboard-teacher"></i></div>
+                                <div>
+                                    <div class="text-secondary small fw-medium">Turmas Ativas</div>
+                                    <div class="fs-4 fw-bold" id="dash-turmas-ativas">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4 border-start border-danger border-4">
+                    <div class="card-body">
+                        <h5 class="text-danger mb-2"><i class="ph ph-warning-circle"></i> Alerta Crítico: Risco de Evasão</h5>
+                        <p class="text-secondary small mb-3">Alunos detectados com elevado número de faltas consecutivas recentes.</p>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 text-nowrap">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Aluno</th>
+                                        <th>Turma</th>
+                                        <th class="text-center">Total Faltas</th>
+                                        <th class="text-end">Ação Recomendada</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-evasao-tbody">
+                                    <tr><td colspan="4" class="text-center text-secondary py-3">Carregando métricas do sistema...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4 border-start border-warning border-4">
+                    <div class="card-body">
+                        <h5 class="text-warning mb-2"><i class="ph ph-warning"></i> Alerta: Saída sem Permissão</h5>
+                        <p class="text-secondary small mb-3">Alunos com presença divergente nos turnos (matando aula).</p>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 text-nowrap">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Aluno</th>
+                                        <th>Turma</th>
+                                        <th class="text-center">Data(s) da Ocorrência</th>
+                                        <th class="text-end">Ação Recomendada</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-saida-indevida-tbody">
+                                    <tr><td colspan="4" class="text-center text-secondary py-3">Carregando métricas do sistema...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4 border-start border-primary border-4">
+                    <div class="card-body">
+                        <h5 class="text-primary mb-2"><i class="ph ph-calendar-check"></i> Retorno de Suspensões</h5>
+                        <p class="text-secondary small mb-3">Alunos agendados para voltar no dia atual.</p>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 text-nowrap">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Aluno</th>
+                                        <th>Turma</th>
+                                        <th class="text-center">Status do Retorno</th>
+                                        <th class="text-end">Ação Recomendada</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-retorno-suspensao-tbody">
+                                    <tr><td colspan="4" class="text-center text-secondary py-3">Carregando métricas do sistema...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: TURMAS & ALUNOS -->
+            <section id="turmas" class="page-section">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                    <div>
+                        <h1 class="h3 fw-bold mb-1">Turmas e Alunos</h1>
+                        <p class="text-secondary mb-0">Gerenciamento de matrículas.</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <input type="file" id="input-importar-alunos" accept=".csv" hidden>
+                        <button class="btn btn-outline-secondary d-flex align-items-center gap-2" id="btn-importar-alunos"><i class="ph ph-upload-simple"></i> Importar CSV</button>
+                        <button class="btn btn-primary d-flex align-items-center gap-2"><i class="ph ph-user-plus"></i> Novo Aluno</button>
+                    </div>
                 </div>
                 
-                <div class="topbar-actions">
-                    <button class="icon-btn" aria-label="Notificações">
-                        <i class="ph ph-bell"></i>
-                        <span class="badge">3</span>
-                    </button>
-                    
-                    <div class="user-profile-menu" id="toggle-profile-menu">
-                        <img src="https://ui-avatars.com/api/?name=Admin+Escola&background=1E3A8A&color=fff" alt="Perfil" class="avatar" id="header-avatar">
-                        <div class="user-info">
-                            <span class="user-name">Admin Escola</span>
-                            <span class="user-role">Diretoria</span>
-                        </div>
-                        <i class="ph ph-caret-down"></i>
-                        
-                        <!-- Dropdown do Perfil -->
-                        <div class="dropdown-menu" id="profile-dropdown">
-                            <a href="#" id="meu-perfil-btn"><i class="ph ph-user"></i> Meu Perfil</a>
-                            <a href="#" id="config-btn"><i class="ph ph-gear"></i> Configurações</a>
-                            <div class="divider"></div>
-                            <a href="#" id="btn-logout" class="text-danger"><i class="ph ph-sign-out"></i> Sair</a>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-auto">
+                                <label for="select-turma-alunos" class="form-label fw-medium mb-1">Filtrar por Turma</label>
+                                <select class="form-select" id="select-turma-alunos">
+                                    <option value="">Todas as Turmas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-auto flex-grow-1">
+                                <label for="search-nome-alunos" class="form-label fw-medium mb-1">Buscar Nome</label>
+                                <input type="text" id="search-nome-alunos" class="form-control" placeholder="Ex: João Alves">
+                            </div>
+                            <div class="col-md-auto text-end mt-4 mt-md-0 d-flex align-items-end">
+                                <button class="btn btn-outline-danger d-flex align-items-center gap-2" id="btn-excluir-base-alunos"><i class="ph ph-trash"></i> Excluir Exibidos</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </header>
 
-            <!-- CONTEÚDO DA PÁGINA (SPA VIEWS) -->
-            <main id="content">
-
-                <!-- VIEW: DASHBOARD -->
-                <section id="dashboard" class="page-section section-active">
-                    <div class="section-header">
-                        <div>
-                            <h1>Visão Geral</h1>
-                            <p>Resumo em tempo real das atividades escolares.</p>
-                        </div>
-                        <button class="btn-primary" onclick="alert('Recurso a ser integrado: Ações Globais')"><i class="ph ph-plus"></i> Nova Ação</button>
-                    </div>
-
-                    <div class="dashboard-cards">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-blue-light"><i class="ph ph-student"></i></div>
-                            <div class="stat-details">
-                                <span class="stat-title">Alunos Matriculados</span>
-                                <span class="stat-value" id="dash-total-alunos">-</span>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon bg-green-light"><i class="ph ph-check-circle"></i></div>
-                            <div class="stat-details">
-                                <span class="stat-title">Última Presença Média</span>
-                                <span class="stat-value" id="dash-presenca-hoje">-</span>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon bg-yellow-light"><i class="ph ph-warning"></i></div>
-                            <div class="stat-details">
-                                <span class="stat-title">Ocorrências Mês</span>
-                                <span class="stat-value" id="dash-ocorrencias-mes">-</span>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon bg-purple-light"><i class="ph ph-chalkboard-teacher"></i></div>
-                            <div class="stat-details">
-                                <span class="stat-title">Turmas Ativas</span>
-                                <span class="stat-value" id="dash-turmas-ativas">-</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card mt-md" style="border-left: 4px solid #DC2626;">
-                        <h3 style="color: #DC2626; margin-bottom: 1rem;"><i class="ph ph-warning-circle"></i> Alerta Crítico: Risco de Evasão</h3>
-                        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.875rem;">Alunos detectados com elevado número de faltas consecutivas recentes.</p>
-                        <table class="data-table">
-                            <thead>
+                <div class="card border-0 shadow-sm">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-nowrap">
+                            <thead class="table-light">
                                 <tr>
                                     <th>Aluno</th>
                                     <th>Turma</th>
-                                    <th class="text-center">Total Faltas</th>
-                                    <th class="text-right">Ação Recomendada</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dash-evasao-tbody">
-                                <tr><td colspan="4" class="text-center text-muted">Carregando métricas do sistema...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="card mt-md" style="border-left: 4px solid #F59E0B;">
-                        <h3 style="color: #D97706; margin-bottom: 1rem;"><i class="ph ph-warning"></i> Alerta Crítico: Risco de Saída sem Permissão (Matando Aula)</h3>
-                        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.875rem;">Alunos com presença em apenas um dos turnos de registro (P e F ou F e P).</p>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Aluno</th>
-                                    <th>Turma</th>
-                                    <th class="text-center">Data(s) da Ocorrência</th>
-                                    <th class="text-right">Ação Recomendada</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dash-saida-indevida-tbody">
-                                <tr><td colspan="4" class="text-center text-muted">Carregando métricas do sistema...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="card mt-md" style="border-left: 4px solid #1E3A8A;">
-                        <h3 style="color: #1E3A8A; margin-bottom: 1rem;"><i class="ph ph-calendar-check"></i> Alerta de Retorno: Alunos Suspensos</h3>
-                        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.875rem;">Alunos com retorno de suspensão agendado para o dia atual.</p>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Aluno</th>
-                                    <th>Turma</th>
-                                    <th class="text-center">Status do Retorno</th>
-                                    <th class="text-right">Ação Recomendada</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dash-retorno-suspensao-tbody">
-                                <tr><td colspan="4" class="text-center text-muted">Carregando métricas do sistema...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <!-- VIEW: TURMAS & ALUNOS -->
-                <section id="turmas" class="page-section">
-                    <div class="section-header">
-                        <div>
-                            <h1>Turmas e Alunos</h1>
-                            <p>Gerenciamento de matrículas e turmas.</p>
-                        </div>
-                        <div style="display: flex; gap: 1rem;">
-                            <input type="file" id="input-importar-alunos" accept=".csv" hidden>
-                            <button class="btn-outline" id="btn-importar-alunos"><i class="ph ph-upload-simple"></i> Importar Alunos</button>
-                            <button class="btn-primary"><i class="ph ph-user-plus"></i> Novo Aluno</button>
-                        </div>
-                    </div>
-                    
-                    <div class="card mb-md filter-bar" style="display: flex; gap: 2rem; align-items: center; padding: 1rem 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-                        <div style="display: flex; gap: 1rem; align-items: center;">
-                            <label for="select-turma-alunos" style="font-weight: 500;">Selecione a Turma:</label>
-                            <select class="input-select" id="select-turma-alunos" style="min-width: 200px;">
-                                <option value="">Todas as Turmas</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; gap: 1rem; align-items: center; flex: 1; max-width: 350px;">
-                            <label for="search-nome-alunos" style="font-weight: 500; white-space: nowrap;">Buscar por Nome:</label>
-                            <input type="text" id="search-nome-alunos" class="input-select" placeholder="Ex: João Alves" style="width: 100%;">
-                        </div>
-                        <div style="margin-left: auto;">
-                            <button class="btn-outline text-danger" id="btn-excluir-base-alunos" style="border-color: var(--danger);"><i class="ph ph-trash"></i> Excluir Alunos Exibidos</button>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Aluno</th>
-                                    <th>Turma</th>
-                                    <th>E-mail / Acesso</th>
-                                    <th class="text-right">Ações</th>
+                                    <th>E-mail</th>
+                                    <th class="text-end">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="lista-alunos-tbody">
-                                <!-- Os alunos importados aparecerão aqui -->
+                                <!-- Preenchido dinamicamente -->
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <!-- VIEW: FREQUÊNCIA -->
-                <section id="frequencia" class="page-section">
-                    <div class="section-header">
-                        <div>
-                            <h1>Registro de Frequência</h1>
-                            <p>Controle de entrada e saída diária.</p>
+            <!-- VIEW: FREQUÊNCIA -->
+            <section id="frequencia" class="page-section">
+                <div class="mb-4">
+                    <h1 class="h3 fw-bold mb-1">Registro de Frequência</h1>
+                    <p class="text-secondary mb-0">Controle de entrada e saída diária.</p>
+                </div>
+                
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-auto">
+                                <label class="form-label fw-medium mb-1">Turno</label>
+                                <select class="form-select" id="select-turno-freq">
+                                    <option value="">-- Todos --</option>
+                                    <option value="Manhã">Manhã</option>
+                                    <option value="Tarde">Tarde</option>
+                                    <option value="Noite">Noite</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label fw-medium mb-1">Turma</label>
+                                <select class="form-select" id="select-turma-freq">
+                                    <option value="">-- Turno 1º --</option>
+                                </select>
+                            </div>
+                            <!-- Separador -->
+                            <div class="col-auto d-none d-md-block"><div style="width:1px; height:38px; background:var(--bs-border-color);"></div></div>
+                            
+                            <div class="col-auto">
+                                <label class="form-label fw-medium mb-1">Mês</label>
+                                <select class="form-select" id="select-mes-freq">
+                                    <option value="">-- Escolha --</option>
+                                    <option value="0">Jan</option><option value="1">Fev</option><option value="2">Mar</option><option value="3">Abr</option><option value="4">Mai</option><option value="5">Jun</option><option value="7">Ago</option><option value="8">Set</option><option value="9">Out</option><option value="10">Nov</option><option value="11">Dez</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label fw-medium mb-1">Dia Letivo</label>
+                                <select class="form-select" id="select-dia-freq">
+                                    <option value="">-- Mês primeiro --</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="card mb-md filter-bar" style="display: flex; gap: 1rem; align-items: flex-end; padding: 1rem 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <label for="select-turno-freq" style="font-weight: 500;">Turno:</label>
-                            <select class="input-select" id="select-turno-freq" style="min-width: 140px;">
-                                <option value="">-- Todos --</option>
-                                <option value="Manhã">Manhã</option>
-                                <option value="Tarde">Tarde</option>
-                                <option value="Noite">Noite</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <label for="select-turma-freq" style="font-weight: 500;">Turma:</label>
-                            <select class="input-select" id="select-turma-freq" style="min-width: 140px;">
-                                <option value="">-- Turno 1º --</option>
-                            </select>
-                        </div>
-                        <div style="width: 1px; height: 30px; background-color: var(--border-color); margin: 0 0.5rem;"></div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <label for="select-mes-freq" style="font-weight: 500;">Mês:</label>
-                            <select class="input-select" id="select-mes-freq" style="min-width: 140px;">
-                                <option value="">-- Mês --</option>
-                                <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option><option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option><option value="7">Agosto</option><option value="8">Setembro</option><option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <label for="select-dia-freq" style="font-weight: 500;">Dia Letivo:</label>
-                            <select class="input-select" id="select-dia-freq" style="min-width: 140px;">
-                                <option value="">-- Mês 1º --</option>
-                            </select>
-                        </div>
-                    </div>
+                </div>
 
-                    <div class="card freq-card">
-                        <table class="data-table">
-                            <thead>
+                <div class="card border-0 shadow-sm freq-card">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle mb-0 text-nowrap data-table">
+                            <thead class="table-light">
                                 <tr>
                                     <th>Aluno</th>
-                                    <th class="text-center">Entrada</th>
-                                    <th class="text-center">Saída</th>
+                                    <th class="text-center">Entrada (Botões P/F)</th>
+                                    <th class="text-center">Saída (Botões P/F)</th>
                                     <th class="text-center">Situação Final</th>
                                 </tr>
                             </thead>
                             <tbody id="lista-freq-tbody">
-                                <tr><td colspan="4" class="text-center text-muted">Selecione uma Turma para abrir o diário de frequência.</td></tr>
+                                <tr><td colspan="4" class="text-center text-secondary py-4">Selecione uma Turma para abrir o diário de frequência.</td></tr>
                             </tbody>
                         </table>
-                        
-                        <div style="text-align: right; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
-                            <span class="text-muted" id="status-consolidacao" style="font-size: 0.9rem;">Pronto para iniciar chamada.</span>
-                            <button class="btn-primary" id="btn-consolidar-chamada"><i class="ph ph-floppy-disk"></i> Consolidar Chamada do Dia</button>
-                        </div>
                     </div>
-                </section>
-                <!-- VIEW: CALENDÁRIO LETIVO -->
-                <section id="calendario" class="page-section">
-                    <div class="section-header">
-                        <div>
-                            <h1>Calendário Letivo 2026</h1>
-                            <p>Gestão de dias letivos, avaliações, feriados e eventos escolares.</p>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <button class="btn-outline" id="btn-prev-month"><i class="ph ph-caret-left"></i></button>
-                            <h2 id="calendar-month-display" style="min-width: 155px; text-align: center; font-size: 1.25rem;">Janeiro 2026</h2>
-                            <button class="btn-outline" id="btn-next-month"><i class="ph ph-caret-right"></i></button>
-                        </div>
+                    
+                    <div class="card-footer bg-transparent border-top p-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <span class="text-secondary small" id="status-consolidacao">Pronto para iniciar a chamada.</span>
+                        <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-consolidar-chamada"><i class="ph ph-floppy-disk"></i> Consolidar Chamada do Dia</button>
                     </div>
+                </div>
+            </section>
 
-                    <div class="card mb-md" style="padding: 0; overflow: hidden;">
-                        <div class="calendar-weekdays">
-                            <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
-                        </div>
-                        <div id="calendar-grid" class="calendar-grid">
-                            <!-- Os dias do mês serão preenchidos via JS -->
-                        </div>
+            <!-- OUTRAS VIEWS (Simplificadas para Bootstrap) -->
+            <!-- Calendario -->
+            <section id="calendario" class="page-section">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                    <div>
+                        <h1 class="h3 fw-bold mb-1">Calendário Letivo 2026</h1>
                     </div>
-
-                    <div class="card" style="display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center;">
-                        <span style="font-weight: 600; color: var(--text-muted);">Legenda Cíclica (Clique no dia):</span>
-                        <div class="legend-item"><span class="legend-color letivo"></span> Dia Letivo</div>
-                        <div class="legend-item"><span class="legend-color feriado"></span> Feriado (Com Legenda)</div>
-                        <div class="legend-item"><span class="legend-color evento"></span> Dia Letivo c/ Legenda de Evento</div>
-                        <div class="legend-item"><span class="legend-color recesso"></span> Recesso / Fim de Semana</div>
+                    <div class="d-flex align-items-center gap-3 bg-body-tertiary rounded p-1">
+                        <button class="btn btn-sm btn-outline-secondary border-0" id="btn-prev-month"><i class="ph ph-caret-left fs-5"></i></button>
+                        <h5 class="mb-0 fw-bold text-center" id="calendar-month-display" style="min-width:130px;">Janeiro</h5>
+                        <button class="btn btn-sm btn-outline-secondary border-0" id="btn-next-month"><i class="ph ph-caret-right fs-5"></i></button>
                     </div>
-                </section>
+                </div>
+                <div class="card shadow-sm border-0 mb-3 overflow-hidden">
+                     <div class="calendar-weekdays d-flex text-center bg-light border-bottom fw-bold" style="color:var(--bs-body-color);">
+                         <div class="flex-fill py-2 text-danger">Dom</div><div class="flex-fill py-2">Seg</div><div class="flex-fill py-2">Ter</div><div class="flex-fill py-2">Qua</div><div class="flex-fill py-2">Qui</div><div class="flex-fill py-2">Sex</div><div class="flex-fill py-2">Sáb</div>
+                     </div>
+                     <div id="calendar-grid" class="calendar-grid"></div>
+                </div>
+                <!-- Legenda do CSS custom mantida porque é pequena, mas podemos exibir flex -->
+            </section>
 
-                <!-- VIEW: OCORRÊNCIAS -->
-                <section id="ocorrencias" class="page-section">
-                    <div class="section-header">
-                        <div>
-                            <h1>Ocorrências Disciplinares</h1>
-                            <p>Registro de advertências e suspensões e histórico do aluno.</p>
-                        </div>
-                    </div>
-
-                    <div class="card mb-md filter-bar" style="display: flex; gap: 1rem; align-items: flex-end; padding: 1rem 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <label for="select-turno-ocor" style="font-weight: 500;">Turno:</label>
-                            <select class="input-select" id="select-turno-ocor" style="min-width: 140px;">
-                                <option value="">-- Todos --</option>
-                                <option value="Manhã">Manhã</option>
-                                <option value="Tarde">Tarde</option>
-                                <option value="Noite">Noite</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <label for="select-turma-ocor" style="font-weight: 500;">Turma:</label>
-                            <select class="input-select" id="select-turma-ocor" style="min-width: 140px;">
-                                <option value="">-- Selecione o Turno --</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <label for="select-aluno-ocor" style="font-weight: 500;">Aluno:</label>
-                            <select class="input-select" id="select-aluno-ocor" style="min-width: 250px;">
-                                <option value="">-- Selecione a Turma primeiro --</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Formulário de Cadastro (Oculto até selecionar aluno) -->
-                    <div id="form-ocorrencia-container" class="card mb-md bg-light hidden">
-                        <h3>Registrar Nova Ocorrência para <span id="nome-aluno-ocorrencia" class="text-primary" style="font-weight:600;"></span></h3>
-                        <form id="form-nova-ocorrencia" class="mt-md">
-                            <div class="grid-2-col" style="align-items: start;">
-                                <div class="input-group">
-                                    <label>Tipo de Ocorrência</label>
-                                    <select id="ocor-tipo" class="input-select" required>
-                                        <option value="Advertência">Advertência Escrita</option>
-                                        <option value="Suspensão">Suspensão</option>
-                                    </select>
-                                </div>
-                                <div class="input-group">
-                                    <label>Comunicar aos Pais?</label>
-                                    <select id="ocor-comunicar" class="input-select" required>
-                                        <option value="Sim">Sim - Exige Ciência</option>
-                                        <option value="Não">Não - Tratativa Interna</option>
-                                    </select>
-                                </div>
+            <!-- Ocorrencias -->
+            <section id="ocorrencias" class="page-section">
+                <div class="mb-4">
+                    <h1 class="h3 fw-bold mb-1">Ocorrências Disciplinares</h1>
+                </div>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-auto">
+                                <select class="form-select" id="select-turno-ocor"><option value="">Turno...</option><option value="Manhã">Manhã</option><option value="Tarde">Tarde</option><option value="Noite">Noite</option></select>
                             </div>
-                            <div class="grid-2-col hidden mt-sm" id="ocor-suspensao-dates" style="align-items: start;">
-                                <div class="input-group">
-                                    <label>Data Inicial (Suspensão)</label>
-                                    <input type="date" id="ocor-data-inicio" class="input-select">
-                                </div>
-                                <div class="input-group">
-                                    <label>Data de Retorno Prevista</label>
-                                    <input type="date" id="ocor-data-retorno" class="input-select">
-                                </div>
+                            <div class="col-12 col-md-auto">
+                                <select class="form-select" id="select-turma-ocor"><option value="">Turma...</option></select>
                             </div>
-                            <div class="input-group mt-sm">
-                                <label>Motivo / Digite a Ocorrência</label>
-                                <textarea id="ocor-motivo" rows="4" placeholder="Descreva detalhadamente o motivo da ocorrência..." style="padding:0.75rem 1rem; border:1px solid var(--border-color); border-radius:6px; font-family: Inter; width: 100%;" required></textarea>
+                            <div class="col-12 col-md-auto flex-grow-1">
+                                <select class="form-select" id="select-aluno-ocor"><option value="">Aluno...</option></select>
                             </div>
-                            <div class="form-actions mt-md" style="display: flex; justify-content: flex-end;">
-                                <button type="submit" class="btn-primary" style="width: auto;"><i class="ph ph-floppy-disk"></i> Salvar Ocorrência</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="form-ocorrencia-container" class="card border-0 shadow-sm mb-4 bg-body-tertiary hidden">
+                    <div class="card-body">
+                        <h5 class="mb-3">Nova Ocorrência: <span id="nome-aluno-ocorrencia" class="text-primary fw-bold"></span></h5>
+                        <form id="form-nova-ocorrencia">
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="form-label">Tipo</label><select id="ocor-tipo" class="form-select" required><option value="Advertência">Advertência Escrita</option><option value="Suspensão">Suspensão</option></select></div>
+                                <div class="col-md-6"><label class="form-label">Pais?</label><select id="ocor-comunicar" class="form-select"><option value="Sim">Sim - Exige Ciência</option><option value="Não">Não - Tratativa Interna</option></select></div>
+                            </div>
+                            <div class="row g-3 hidden mt-1" id="ocor-suspensao-dates">
+                                <div class="col-md-6"><label class="form-label">Início</label><input type="date" id="ocor-data-inicio" class="form-control"></div>
+                                <div class="col-md-6"><label class="form-label">Retorno</label><input type="date" id="ocor-data-retorno" class="form-control"></div>
+                            </div>
+                            <div class="mt-3">
+                                <label class="form-label">Motivo</label>
+                                <textarea id="ocor-motivo" class="form-control" rows="3" required></textarea>
+                            </div>
+                            <div class="mt-3 text-end">
+                                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> Salvar Ocorrência</button>
                             </div>
                         </form>
                     </div>
+                </div>
 
-                    <!-- Tabela de Histórico -->
-                    <div class="card" id="history-ocorrencia-container">
-                        <h3 style="margin-bottom: 1rem;">Histórico Disciplinar</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 15%">Data e Hora</th>
-                                    <th style="width: 15%">Tipo</th>
-                                    <th style="width: 40%">Motivo</th>
-                                    <th style="width: 20%">Registrado Por</th>
-                                    <th style="width: 10%" class="text-center">Pais</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody-ocorrencias">
-                                <tr><td colspan="5" class="text-center text-muted">Selecione um aluno acima para visualizar o histórico.</td></tr>
-                            </tbody>
+                <div class="card border-0 shadow-sm" id="history-ocorrencia-container">
+                    <div class="card-header bg-transparent fw-bold">Histórico Disciplinar</div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-nowrap">
+                            <thead class="table-light"><tr><th>D/H</th><th>Tipo</th><th>Motivo</th><th>Por</th><th>Pais</th></tr></thead>
+                            <tbody id="tbody-ocorrencias"><tr><td colspan="5" class="text-center text-secondary py-4">Selecione um aluno...</td></tr></tbody>
                         </table>
                     </div>
-                </section>
+                </div>
+            </section>
+            
+            <!-- Views Vazias para nao sobrecarregar mas preencher estruturalmente whatsapp, relatorios, permissoes... -->
+            <section id="whatsapp" class="page-section">
+                <h1 class="h3 fw-bold mb-4">Comunicados (WhatsApp Web)</h1>
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <form id="form-whatsapp">
+                                    <div class="mb-3"><label class="form-label">Destinatário</label><select class="form-select" id="zap-destinatario"><option value="todos">Todos</option></select></div>
+                                    <div class="mb-3"><label class="form-label">Mensagem</label><textarea class="form-control" id="zap-texto" rows="4"></textarea></div>
+                                    
+                                    <div class="border rounded p-4 text-center bg-body-tertiary mb-3" style="cursor:pointer" id="drop-zone">
+                                         <input type="file" id="zap-anexo" hidden>
+                                         <div id="drop-content"><i class="ph ph-upload-simple fs-1 text-secondary"></i><p class="mb-0">Clique para Anexar Mídia</p></div>
+                                         <div id="preview-zone" class="hidden d-flex justify-content-between px-3 py-2 border rounded bg-body">
+                                             <div class="d-flex align-items-center gap-2"><img src="" id="file-preview-img" width="40" height="40" class="rounded"><span id="file-name" class="small"></span></div>
+                                             <button type="button" class="btn btn-sm btn-outline-danger" id="btn-remove-file"><i class="ph ph-trash"></i></button>
+                                         </div>
+                                    </div>
+                                    <button type="button" class="btn btn-success w-100" id="btn-enviar-zap"><i class="ph ph-paper-plane-right"></i> Enviar Via WhatsApp</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-                <!-- VIEW: WHATSAPP -->
-                <section id="whatsapp" class="page-section">
-                    <div class="section-header">
-                        <div>
-                            <h1>Comunicados via WhatsApp</h1>
-                            <p>Disparo de mensagens para responsáveis.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="whatsapp-container">
-                        <div class="card flex-1">
-                            <h3>Nova Mensagem</h3>
-                            <form id="form-whatsapp">
-                                <div class="input-group">
-                                    <label>Destinatários</label>
-                                    <select class="input-select" id="zap-destinatario">
-                                        <option value="todos">Todos os Responsáveis</option>
-                                        <option value="turma">Por Turma...</option>
-                                        <option value="individual">Aluno Específico...</option>
-                                    </select>
-                                </div>
-                                <div class="input-group">
-                                    <label>Mensagem</label>
-                                    <textarea id="zap-texto" rows="5" placeholder="Digite o comunicado aqui..."></textarea>
-                                </div>
-                                
-                                <div class="attachment-zone" id="drop-zone">
-                                    <input type="file" id="zap-anexo" accept="image/*, application/pdf" hidden>
-                                    <div class="drop-content" id="drop-content">
-                                        <i class="ph ph-upload-simple"></i>
-                                        <p>Clique ou arraste um arquivo para anexar</p>
-                                        <span>JPG, PNG ou PDF (Máx 5MB)</span>
-                                    </div>
-                                    <div class="preview-zone hidden" id="preview-zone">
-                                        <img id="file-preview-img" src="" alt="Preview">
-                                        <div class="file-info">
-                                            <span id="file-name">arquivo.jpg</span>
-                                            <button type="button" class="btn-icon text-danger" id="btn-remove-file"><i class="ph ph-trash"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-actions mt-md">
-                                    <button type="button" class="btn-primary w-full" id="btn-enviar-zap">
-                                        <i class="ph ph-paper-plane-right"></i> Enviar Mensagem
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                        
-                        <div class="card whatsapp-preview-card bg-light">
-                            <h3>Pré-visualização</h3>
-                            <div class="chat-mockup">
-                                <div class="chat-bubble">
-                                    <p id="chat-preview-text">Digite algo para visualizar...</p>
-                                    <div id="chat-preview-image" class="hidden">
-                                        <img src="" alt="Visualização do anexo">
-                                    </div>
-                                    <span class="chat-time">10:45</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+            <section id="relatorios" class="page-section">
+                <h1 class="h3 fw-bold mb-4">Exportações CSV</h1>
+                <div class="row g-4">
+                    <div class="col-md-6"><div class="card shadow-sm border-0 h-100"><div class="card-body"><h5 class="fw-bold"><i class="ph ph-users-three text-primary"></i> Alunos</h5><p class="small text-secondary">Baixar banco de alunos completo.</p><button class="btn btn-outline-primary w-100" id="btn-export-alunos">Download CSV</button></div></div></div>
+                    <div class="col-md-6"><div class="card shadow-sm border-0 h-100"><div class="card-body"><h5 class="fw-bold"><i class="ph ph-calendar-check text-primary"></i> Frequência</h5><p class="small text-secondary">Baixar as consolidações.</p><button class="btn btn-outline-primary w-100" id="btn-export-freq">Download CSV</button></div></div></div>
+                    <div class="col-md-12"><div class="card shadow-sm border-0 h-100"><div class="card-body d-flex justify-content-between align-items-center"><h5 class="fw-bold mb-0"><i class="ph ph-warning-circle text-primary"></i> Ocorrências Disciplinares</h5><button class="btn btn-outline-primary" id="btn-export-ocorrencias">Download CSV</button></div></div></div>
+                </div>
+            </section>
 
-                <section id="relatorios" class="page-section">
-                    <div class="section-header">
-                        <div>
-                            <h1>Central de Exportações</h1>
-                            <p>Geração de relatórios gerenciais e download de bases do sistema para Microsoft Excel (CSV).</p>
-                        </div>
+            <section id="permissoes" class="page-section">
+                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                    <h1 class="h3 fw-bold mb-0">Acesso & Permissões</h1>
+                    <div class="d-flex gap-2">
+                        <input type="file" id="input-importar-csv" hidden>
+                        <button class="btn btn-outline-secondary" id="btn-importar-usuarios">Importar</button>
+                        <button class="btn btn-primary" id="btn-novo-usuario">Novo Acesso</button>
                     </div>
-                    
-                    <div class="grid-2-col">
-                        <!-- Relatório 1: Alunos -->
-                        <div class="card export-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-                            <div>
-                                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                                    <i class="ph ph-users-three text-primary"></i> Base Completa de Alunos
-                                </h3>
-                                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.5rem;">
-                                    Exporta a lista contendo todos os matriculados na base do Gestor RVS, contendo suas turmas.
-                                </p>
-                            </div>
-                            <button class="btn-outline w-full" id="btn-export-alunos">
-                                <i class="ph ph-download-simple"></i> Baixar Dados de Alunos (.csv)
-                            </button>
-                        </div>
-                        
-                        <!-- Relatório 2: Frequencia -->
-                        <div class="card export-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-                            <div>
-                                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                                    <i class="ph ph-calendar-check text-primary"></i> Diários de Frequência
-                                </h3>
-                                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.5rem;">
-                                    Exporta a consolidação das chamadas realizadas pelos professores, tabuladas dia a dia.
-                                </p>
-                            </div>
-                            <button class="btn-outline w-full" id="btn-export-freq">
-                                <i class="ph ph-download-simple"></i> Baixar Frequências (.csv)
-                            </button>
-                        </div>
-                        
-                        <!-- Relatório 3: Ocorrencias -->
-                        <div class="card export-card" style="display: flex; flex-direction: column; justify-content: space-between; grid-column: span 1 / span 2;">
-                            <div>
-                                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                                    <i class="ph ph-warning-circle text-primary"></i> Histórico de Disciplina
-                                </h3>
-                                <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 1.5rem;">
-                                    Uma planilha sensível contemplando as atitudes corretivas (suspensões) emitidas aos alunos.
-                                </p>
-                            </div>
-                            <button class="btn-outline" style="width: auto; align-self: flex-start" id="btn-export-ocorrencias">
-                                <i class="ph ph-download-simple"></i> Baixar Ocorrências Disciplinares (.csv)
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                <section id="permissoes" class="page-section">
-                    <div class="section-header">
-                        <div>
-                            <h1>Acesso & Permissões</h1>
-                            <p>Gestão de usuários autorizados no sistema escolar.</p>
-                        </div>
-                        <div style="display: flex; gap: 1rem;">
-                            <input type="file" id="input-importar-csv" accept=".csv" hidden>
-                            <button class="btn-outline" id="btn-importar-usuarios"><i class="ph ph-upload-simple"></i> Importar Usuários</button>
-                            <button class="btn-primary" id="btn-novo-usuario"><i class="ph ph-user-plus"></i> Novo Usuário</button>
-                        </div>
-                    </div>
-
-                    <div class="card bg-light mb-md hidden" id="form-usuario-container">
-                        <h3>Cadastrar Novo Usuário</h3>
-                        <form id="form-novo-usuario" class="mt-md">
-                            <div class="grid-2-col">
-                                <div class="input-group">
-                                    <label for="usr-nome">Nome Completo</label>
-                                    <div class="input-wrapper">
-                                        <i class="ph ph-user"></i>
-                                        <input type="text" id="usr-nome" placeholder="Nome Completo" required>
-                                    </div>
-                                </div>
-                                <div class="input-group">
-                                    <label for="usr-email">E-mail de Acesso</label>
-                                    <div class="input-wrapper">
-                                        <i class="ph ph-envelope"></i>
-                                        <input type="email" id="usr-email" placeholder="usuario@escola.com.br" required>
-                                    </div>
-                                </div>
-                                <div class="input-group">
-                                    <label for="usr-senha">Senha Provisória</label>
-                                    <div class="input-wrapper">
-                                        <i class="ph ph-lock"></i>
-                                        <input type="password" id="usr-senha" placeholder="Senha segura" required>
-                                    </div>
-                                </div>
-                                <div class="input-group">
-                                    <label for="usr-funcao">Função no Sistema</label>
-                                    <select id="usr-funcao" class="input-select" required style="width: 100%;">
-                                        <option value="">Selecione o papel...</option>
-                                        <option value="manager">Manager (Diretoria)</option>
-                                        <option value="coordenacao">Coordenação</option>
-                                        <option value="secretaria">Secretaria</option>
-                                        <option value="professor">Professor(a)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-actions mt-md" style="display: flex; gap: 1rem; justify-content: flex-end;">
-                                <button type="button" class="btn-outline" id="btn-cancelar-usr">Cancelar</button>
-                                <button type="submit" class="btn-primary">Criar Acesso</button>
-                            </div>
+                </div>
+                <div class="card shadow-sm border-0 hidden mb-4 bg-body-tertiary" id="form-usuario-container">
+                    <div class="card-body">
+                        <form id="form-novo-usuario">
+                            <div class="row g-3"><div class="col-md-3"><input type="text" id="usr-nome" class="form-control" placeholder="Nome"></div><div class="col-md-3"><input type="email" id="usr-email" class="form-control" placeholder="Email"></div><div class="col-md-3"><input type="password" id="usr-senha" class="form-control" placeholder="Senha"></div><div class="col-md-3"><select class="form-select" id="usr-funcao"><option value="manager">Manager</option></select></div></div>
+                            <div class="mt-3 text-end"><button type="button" class="btn btn-outline-secondary me-2" id="btn-cancelar-usr">Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button></div>
                         </form>
                     </div>
+                </div>
+                <div class="card shadow-sm border-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Usuário</th><th>E-mail</th><th>Função</th><th>Ação</th></tr></thead><tbody id="lista-usuarios-tbody"><tr><td colspan="4" class="text-center py-4">Nenhum cad.</td></tr></tbody></table></div></div>
+            </section>
 
-                    <div class="card">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Usuário</th>
-                                    <th>E-mail</th>
-                                    <th>Função</th>
-                                    <th class="text-right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="lista-usuarios-tbody">
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">Nenhum usuário cadastrado. Importe a base para popular acessos.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-            </main>
-        </div>
+        </main>
     </div>
 
-    <!-- MODAL DE PERFIL -->
-    <div class="modal-overlay hidden" id="perfil-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Meu Perfil</h2>
-                <button class="btn-close" id="btn-close-modal"><i class="ph ph-x"></i></button>
+    <!-- MODAL DE PERFIL JS CUSTO (Para não quebrar a lógica hardcoded do client se houver) -->
+    <div class="modal-overlay hidden" id="perfil-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center; display:flex;">
+        <div class="modal-content card shadow-lg border-0" style="width:100%; max-width:500px;">
+            <div class="card-header d-flex justify-content-between bg-transparent fw-bold fs-5">
+                Meu Perfil
+                <button class="btn-close" id="btn-close-modal"></button>
             </div>
-            <div class="modal-body">
-                <div class="profile-edit-header">
-                    <div class="profile-pic-wrapper">
-                        <img src="https://ui-avatars.com/api/?name=Admin+Escola&background=1E3A8A&color=fff" id="modal-avatar" alt="Avatar">
-                        <button class="btn-edit-pic" aria-label="Editar Foto"><i class="ph ph-camera"></i></button>
-                    </div>
-                </div>
-                <form id="form-perfil">
-                    <div class="input-group">
-                        <label>Nome Completo</label>
-                        <input type="text" value="Administrador da Escola">
-                    </div>
-                    <div class="input-group">
-                        <label>Cargo/Função</label>
-                        <input type="text" value="Diretoria" disabled>
-                    </div>
-                    <div class="input-group">
-                        <label>Biografia Curta</label>
-                        <textarea rows="3">Gestor focado em resultados educacionais.</textarea>
-                    </div>
-                </form>
+            <div class="card-body text-center">
+                 <img src="https://ui-avatars.com/api/?name=Admin+Escola&background=1E3A8A&color=fff" id="modal-avatar" width="100" class="rounded-circle mb-3">
+                 <form id="form-perfil" class="text-start">
+                     <div class="mb-3"><label class="form-label">Nome</label><input type="text" class="form-control" value="Administrador"></div>
+                     <div class="mb-3"><label class="form-label">Cargo</label><input type="text" class="form-control" value="Diretoria" disabled></div>
+                 </form>
             </div>
-            <div class="modal-footer">
-                <button class="btn-outline" id="btn-cancel-modal">Cancelar</button>
-                <button class="btn-primary" id="btn-save-modal">Salvar Alterações</button>
+            <div class="card-footer bg-transparent text-end">
+                <button class="btn btn-outline-secondary" id="btn-cancel-modal">Cancelar</button>
+                <button class="btn btn-primary" id="btn-save-modal">Salvar</button>
             </div>
         </div>
     </div>
-
-
-    <!-- Transfer Modal -->
-    <div class="modal-overlay hidden" id="transfer-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Transferir Aluno</h2>
-                <button class="btn-close" id="btn-close-transfer"><i class="ph ph-x"></i></button>
+    
+    <!-- MODAL TRANSFERENCIA JS CUSTO -->
+    <div class="modal-overlay hidden" id="transfer-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center; display:flex;">
+        <div class="modal-content card shadow-lg border-0" style="width:100%; max-width:600px;">
+            <div class="card-header d-flex justify-content-between bg-transparent fw-bold fs-5">
+                Transferir Aluno
+                <button class="btn-close" id="btn-close-transfer"></button>
             </div>
-            <div class="modal-body">
-                <p id="transfer-student-name" style="font-weight: 600; margin-bottom: 1rem; color: var(--primary-blue);"></p>
-                <div class="input-group">
-                    <label for="select-new-class">Nova Turma do Aluno:</label>
-                    <select id="select-new-class" class="input-select"></select>
+            <div class="card-body pb-0">
+                <p id="transfer-student-name" class="fw-bold text-primary mb-3"></p>
+                <div class="mb-3">
+                    <label class="form-label">Nova Turma</label>
+                    <select id="select-new-class" class="form-select"></select>
                 </div>
-
-                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Histórico de Transferências</h3>
-                    <div style="max-height: 200px; overflow-y: auto;">
-                        <table class="data-table" style="font-size: 0.85rem;">
-                            <thead>
-                                <tr>
-                                    <th>Data/Hora</th>
-                                    <th>De</th>
-                                    <th>Para</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transfer-history-tbody">
-                            </tbody>
-                        </table>
-                    </div>
+                <hr>
+                <h6 class="fw-bold">Histórico</h6>
+                <div class="table-responsive" style="max-height: 200px;">
+                    <table class="table table-sm small">
+                        <thead><tr><th>Data</th><th>De</th><th>Para</th></tr></thead>
+                        <tbody id="transfer-history-tbody"></tbody>
+                    </table>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-outline" id="btn-cancel-transfer">Cancelar</button>
-                <button class="btn-primary" id="btn-confirm-transfer">Salvar e Transferir Frequência</button>
+            <div class="card-footer bg-transparent text-end">
+                <button class="btn btn-outline-secondary" id="btn-cancel-transfer">Cancelar</button>
+                <button class="btn btn-primary" id="btn-confirm-transfer">Transferir</button>
             </div>
         </div>
     </div>
 
-    <script src="./js/app.js?v=4"></script>
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./js/app.js?v=5"></script>
+    
+    <script>
+        // Correção das views overlay escondidas que usavam `.hidden` no app.js
+        // O app.js usa classList.remove('hidden'). O inline flex ali no style precisava ser ajustado:
+        const overlays = document.querySelectorAll('.modal-overlay');
+        overlays.forEach(o => {
+            o.style.display = o.classList.contains('hidden') ? 'none' : 'flex';
+            // Monkey patch the classList toggle to force display style changes
+            const observer = new MutationObserver(mutations => {
+                mutations.forEach(m => {
+                    if (m.attributeName === "class") {
+                        o.style.display = o.classList.contains('hidden') ? 'none' : 'flex';
+                    }
+                });
+            });
+            observer.observe(o, {attributes: true});
+        });
+    </script>
 </body>
 </html>
