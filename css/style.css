@@ -166,3 +166,74 @@
 
 .tipo-recesso { background-color: transparent !important; color: var(--bs-secondary-color) !important; border: 1px solid transparent !important;}
 .legend-color.recesso { background-color: var(--bs-tertiary-bg); border: 1px dashed var(--bs-border-color); }
+
+/* -------------------------------------
+   AUDITORIA VISUAL: Fundo Sólido & Contraste
+-------------------------------------- */
+/* Define fundos sólidos 100% sobrepostos em modais transparentes e tabs */
+.modal-content, .card, .page-section, body {
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color) !important;
+}
+
+/* Modais de destaque */
+.modal-content {
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.25);
+}
+
+/* Força constraste e padding unificado para abas informativas da interface interna */
+.bg-light {
+    background-color: var(--bs-tertiary-bg) !important;
+    color: var(--bs-emphasis-color) !important;
+}
+
+.table {
+    --bs-table-bg: var(--bs-body-bg);
+    --bs-table-color: var(--bs-body-color);
+}
+.table thead th {
+    background-color: var(--bs-secondary-bg) !important;
+    color: var(--bs-emphasis-color) !important;
+    font-weight: 700;
+}
+
+/* Hover Global adicionado às linhas das tabelas do Bootstrap */
+.table tbody tr:hover {
+    background-color: var(--bs-secondary-bg);
+}
+
+/* -------------------------------------
+   MODAL DE IMPRESSÃO (DOSSIÊ E RELATÓRIOS)
+-------------------------------------- */
+@media print {
+    /* Força fundos brancos e tipografia full black ignorando Light/Dark mode da UI */
+    body, .page-section, .modal-content, .modal-overlay, .card, 
+    #ficha-aluno-modal {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    /* Esconde Navbar, Botões Auxiliares e a própria barra de rolagem */
+    nav, .btn, .btn-close, .nav-link, button, #btn-acoes-globais, #camera-capture-modal {
+        display: none !important;
+    }
+
+    /* Solta as amarras do CSS Fixed Positioning para impressoras */
+    #ficha-aluno-modal {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    #ficha-aluno-modal .modal-content {
+        max-height: none !important;
+        overflow: visible !important;
+        width: 100% !important;
+    }
+}

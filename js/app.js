@@ -13,16 +13,27 @@ document.addEventListener('DOMContentLoaded', () => {
         loginView.classList.add('view-hidden');
         appView.classList.remove('view-hidden');
         appView.classList.add('view-active');
+        setTimeout(() => { if (typeof window.aplicarPermissoes === 'function') window.aplicarPermissoes(); }, 100);
     }
 
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
-        const emailBox = document.getElementById('login-email');
-        const passBox = document.getElementById('login-password');
+        const emailBox = document.getElementById('login-email').value.trim();
+        const passBox = document.getElementById('login-password').value.trim();
         
-        if (emailBox.value !== 'dhenison@admin.com' || passBox.value !== '123456') {
-            alert('Acesso negado. E-mail ou senha incorretos.');
+        let validUser = null;
+
+        if (emailBox === 'manager@admin.com' && passBox === '123') {
+            validUser = { email: emailBox, role: 'manager', nome: 'Gestor Administrativo' };
+        } else if (emailBox === 'prof@admin.com' && passBox === '123') {
+            validUser = { email: emailBox, role: 'professor', nome: 'Professor Titular' };
+        } else if (emailBox === 'dhenison@admin.com' && passBox === '123456') { // Mock legado suportado
+            validUser = { email: emailBox, role: 'manager', nome: 'Dhenison (Super Admin)' };
+        }
+        
+        if (!validUser) {
+            alert('Acesso negado. Use manager@admin.com (123) ou prof@admin.com (123).');
             return;
         }
 
@@ -32,8 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = '<i class="ph ph-spinner-gap ph-spin"></i> Entrando...';
         
         setTimeout(() => {
-            // Salvar credencial fantasma
+            // Salvar credencial logada
             localStorage.setItem('rvs_logged', 'true');
+            localStorage.setItem('rvs_usuarioAtivo', JSON.stringify(validUser));
             
             // Esconder login, mostrar App
             loginView.classList.remove('view-active');
@@ -43,8 +55,65 @@ document.addEventListener('DOMContentLoaded', () => {
             appView.classList.add('view-active');
             
             btn.innerHTML = originalText;
+            aplicarPermissoes();
         }, 800);
     });
+
+    window.aplicarPermissoes = function() {
+        let userStr = localStorage.getItem('rvs_usuarioAtivo');
+        let user;
+        
+        if (!userStr) {
+            // Conta legada logada sem role
+            user = { role: 'manager', nome: 'Admin Escola', email: 'dhenison@admin.com' };
+            localStorage.setItem('rvs_usuarioAtivo', JSON.stringify(user));
+        } else {
+            try {
+                user = JSON.parse(userStr);
+            } catch(e) {
+                user = { role: 'manager', nome: 'Admin Escola', email: 'dhenison@admin.com' };
+            }
+        }
+        
+        // Aplica cabeçalho de perfil
+        const headerAvatar = document.querySelector('#header-avatar');
+        if (headerAvatar) {
+            headerAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=1E3A8A&color=fff`;
+            const headerDesc = headerAvatar.nextElementSibling;
+            if(headerDesc) {
+                headerDesc.innerHTML = `<div class="fw-semibold small">${user.nome}</div><div class="text-body-secondary" style="font-size: 0.75rem;">${user.role === 'manager' ? 'Diretoria' : 'Logado como Professor'}</div>`;
+            }
+        }
+
+        const btnAcoes = document.getElementById('btn-acoes-globais');
+        
+        // Aplica trava de rotas e botões
+        if (user.role !== 'manager') {
+            const targetsEsconder = ['dashboard', 'turmas', 'whatsapp', 'relatorios', 'permissoes'];
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const alvo = link.getAttribute('data-target');
+                if(targetsEsconder.includes(alvo)) {
+                    link.style.display = 'none';
+                }
+            });
+            // Esconde botão global de dashboards do Manager
+            if (btnAcoes) btnAcoes.style.display = 'none';
+            
+            // Força ida para a Frequência se o Dashboard for a tela ativa (professores)
+            setTimeout(() => {
+                const freqBtn = document.querySelector('.nav-link[data-target="frequencia"]');
+                if(freqBtn && document.getElementById('dashboard').classList.contains('section-active')) {
+                    freqBtn.click();
+                }
+            }, 150);
+        } else {
+            if (btnAcoes) {
+                btnAcoes.style.display = 'flex';
+                btnAcoes.innerHTML = '<i class="ph ph-gear"></i> Configurar Bimestres';
+                btnAcoes.onclick = () => alert('Tela de Configuração de Bimestres será implementada.');
+            }
+        }
+    };
 
     // Botão de Logout real
     const btnLogout = document.getElementById('btn-logout');
@@ -357,13 +426,80 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 7. IMPORTAÇÃO DE ALUNOS (TURMAS & ALUNOS)
+    // 7. GESTÃO DE ALUNOS (CADASTRO E IMPORTAÇÃO)
     // ==========================================
     const btnImportarAlunos = document.getElementById('btn-importar-alunos');
     const inputImportarAlunos = document.getElementById('input-importar-alunos');
     const tbodyAlunos = document.getElementById('lista-alunos-tbody');
     const selectTurmaAlunos = document.getElementById('select-turma-alunos');
     const searchNomeAlunos = document.getElementById('search-nome-alunos');
+    
+    // Novo Aluno
+    const btnNovoAluno = document.getElementById('btn-novo-aluno');
+    const modalNovoAluno = document.getElementById('novo-aluno-modal');
+    
+    if (btnNovoAluno && modalNovoAluno) {
+        btnNovoAluno.addEventListener('click', () => {
+            modalNovoAluno.classList.remove('hidden');
+        });
+
+        const fecharModalNovoAluno = () => {
+            modalNovoAluno.classList.add('hidden');
+            document.getElementById('form-novo-aluno').reset();
+        };
+
+        document.getElementById('btn-close-novo-aluno')?.addEventListener('click', fecharModalNovoAluno);
+        document.getElementById('btn-cancel-novo-aluno')?.addEventListener('click', fecharModalNovoAluno);
+
+        document.getElementById('btn-save-novo-aluno')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('novo-aluno-nome').value.trim();
+            const cpf = document.getElementById('novo-aluno-cpf').value.trim();
+            const turma = document.getElementById('novo-aluno-turma').value.trim().toUpperCase();
+            const fileInput = document.getElementById('novo-aluno-foto');
+            
+            if(!nome || !cpf || !turma) return alert("Preencha Nome, CPF e Turma!");
+
+            const alunoObj = {
+                cpf, aluno: nome, turma, dataNasc: '', idade: '', email: '', nomePai: '', nomeMae: '', telefone: '', senha: '',
+                initials: nome.substring(0, 2).toUpperCase(),
+                avatarBg: "#F8FAFC",
+                avatarColor: "#1E3A8A"
+            };
+
+            const salvarNaQueue = (base64Img) => {
+                const dadosEvt = { ...alunoObj, fotoBase64: base64Img || "" };
+                alunosCadastrados.push(alunoObj);
+                localStorage.setItem('rvs_alunos_cadastrados', JSON.stringify(alunosCadastrados));
+                
+                let syncQueue = JSON.parse(localStorage.getItem('rvs_sync_queue')) || [];
+                syncQueue.push({
+                    tipo: "NOVO_ALUNO",
+                    dados: dadosEvt,
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('rvs_sync_queue', JSON.stringify(syncQueue));
+                
+                fecharModalNovoAluno();
+                atualizarSelectTurmas();
+                renderizarTabelaAlunos();
+                if (navigator.onLine && typeof syncPendingData === 'function') syncPendingData();
+            };
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (evt) => salvarNaQueue(evt.target.result);
+                reader.readAsDataURL(fileInput.files[0]);
+            } else if (window.tempNovoAlunoBase64) {
+                salvarNaQueue(window.tempNovoAlunoBase64);
+                window.tempNovoAlunoBase64 = null; // Consume Cache
+                const prw = document.getElementById('novo-aluno-preview-container');
+                if(prw) prw.style.display = 'none';
+            } else {
+                salvarNaQueue("");
+            }
+        });
+    }
     
     let alunosCadastrados = JSON.parse(localStorage.getItem('rvs_alunos_cadastrados')) || [];
 
@@ -401,12 +537,96 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><span class="badge" style="background:#FEF3C7; color:#D97706;">${aluno.turma}</span></td>
                 <td>${aluno.email}</td>
                 <td class="text-right">
-                    <button class="btn-icon" onclick="alert('Funcionalidade em desenvolvimento')"><i class="ph ph-pencil-simple"></i></button>
+                    <button class="btn-icon text-primary" onclick="window.abrirFichaAluno('${aluno.cpf}')" title="Dossiê do Aluno"><i class="ph ph-identification-card"></i></button>
                     <button class="btn-icon text-danger" onclick="window.removerAluno('${aluno.cpf}')" title="Excluir Aluno"><i class="ph ph-trash"></i></button>
                     <button class="btn-icon btn-outline btn-sm" onclick="window.abrirModalTransferencia('${aluno.cpf}')" title="Transferir de Turma"><i class="ph ph-arrows-left-right"></i></button>
                 </td>
             `;
             tbodyAlunos.appendChild(tr);
+        });
+    }
+
+    window.abrirFichaAluno = function(cpf) {
+        const aluno = alunosCadastrados.find(a => a.cpf === cpf);
+        if(!aluno) return;
+        
+        document.getElementById('ficha-nome').textContent = aluno.aluno;
+        document.getElementById('ficha-turma').textContent = aluno.turma;
+        document.getElementById('ficha-cpf').textContent = aluno.cpf;
+        document.getElementById('ficha-idade').textContent = aluno.idade || '--';
+        document.getElementById('ficha-email').textContent = aluno.email || '--';
+        document.getElementById('ficha-tel').textContent = aluno.telefone || '--';
+        document.getElementById('ficha-mae').textContent = aluno.nomeMae || '--';
+        document.getElementById('ficha-pai').textContent = aluno.nomePai || '--';
+        document.getElementById('ficha-foto').src = aluno.fotoBase64 || `https://ui-avatars.com/api/?name=${encodeURIComponent(aluno.aluno)}&size=80&background=1E3A8A&color=fff`;
+        
+        document.getElementById('ficha-aluno-modal').classList.remove('hidden');
+    };
+
+    // ==========================================
+    // LÓGICA DE ATUALIZAÇÂO FOTO DO DOSSIÊ
+    // ==========================================
+    const btnCameraDossie = document.getElementById('btn-camera-dossie');
+    const inputFotoDossie = document.getElementById('dossie-file-input');
+
+    if (btnCameraDossie && inputFotoDossie) {
+        btnCameraDossie.addEventListener('click', (e) => {
+            e.preventDefault();
+            inputFotoDossie.click();
+        });
+
+        inputFotoDossie.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const cpfAtual = document.getElementById('ficha-cpf').textContent;
+            if (!cpfAtual) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Compressão max 800px equivalente à nossa câmera WebRTC nativa
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    let scale = 1;
+                    if (img.width > MAX_WIDTH) {
+                        scale = MAX_WIDTH / img.width;
+                    }
+                    canvas.width = Math.floor(img.width * scale);
+                    canvas.height = Math.floor(img.height * scale);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const base64Img = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // 1. Atualizar UI Dinamicamente
+                    document.getElementById('ficha-foto').src = base64Img;
+                    
+                    // 2. Atualizar Array em Memória
+                    const alunoIdx = alunosCadastrados.findIndex(a => a.cpf === cpfAtual);
+                    if (alunoIdx > -1) {
+                        alunosCadastrados[alunoIdx].fotoBase64 = base64Img;
+                        localStorage.setItem('rvs_alunos_cadastrados', JSON.stringify(alunosCadastrados));
+                        
+                        // 3. Renderizar na tabela que está por baixo da modal
+                        renderizarTabelaAlunos();
+
+                        // 4. Jogar na Fila de Sincronização conectada ao AppSheet / GAS
+                        let syncQueue = JSON.parse(localStorage.getItem('rvs_sync_queue')) || [];
+                        syncQueue.push({
+                            tipo: "UPDATE_ALUNO",
+                            dados: alunosCadastrados[alunoIdx],
+                            timestamp: new Date().toISOString()
+                        });
+                        localStorage.setItem('rvs_sync_queue', JSON.stringify(syncQueue));
+                        if (navigator.onLine && typeof window.syncPendingData === 'function') window.syncPendingData();
+                    }
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+            inputFotoDossie.value = ''; // Reseta input para permitir re-seleção do mesmo arquivo caso mude ideia e erre
         });
     }
 
@@ -505,6 +725,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         alunoEditandoTransferencia.turma = novaTurma;
+        
+        // Fila de Sincronizacao
+        let syncQueue = JSON.parse(localStorage.getItem('rvs_sync_queue')) || [];
+        syncQueue.push({
+            tipo: "TRANSFERENCIA",
+            dados: {
+                cpf: alunoEditandoTransferencia.cpf,
+                de: turmaAntiga,
+                para: novaTurma,
+                dataHora: dataHoraFormatada
+            },
+            timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('rvs_sync_queue', JSON.stringify(syncQueue));
+        
+        // Tenta sincronizar agora se on-line
+        if (navigator.onLine && typeof syncPendingData === 'function') syncPendingData();
 
         // Salvar alunos
         localStorage.setItem('rvs_alunos_cadastrados', JSON.stringify(alunosCadastrados));
@@ -772,11 +1009,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const eClsP = entAtiva === 'P' ? 'selected selected-p' : '';
             const eClsF = entAtiva === 'F' ? 'selected selected-f' : '';
             const eClsFJ = entAtiva === 'FJ' ? 'selected selected-fj' : '';
+            const eClsPA = entAtiva === 'PA' ? 'selected selected-pa' : '';
             
             // Classes para os botões S
             const sClsP = saiAtiva === 'P' ? 'selected selected-p' : '';
             const sClsF = saiAtiva === 'F' ? 'selected selected-f' : '';
             const sClsFJ = saiAtiva === 'FJ' ? 'selected selected-fj' : '';
+            const sClsPA = saiAtiva === 'PA' ? 'selected selected-pa' : '';
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
@@ -790,11 +1029,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="btn-chamada ${eClsP}" data-val="P" data-tipo="E" data-cpf="${aluno.cpf}">P</button>
                         <button class="btn-chamada ${eClsF}" data-val="F" data-tipo="E" data-cpf="${aluno.cpf}">F</button>
                         <button class="btn-chamada ${eClsFJ}" data-val="FJ" data-tipo="E" data-cpf="${aluno.cpf}">FJ</button>
+                        <button class="btn-chamada ${eClsPA}" data-val="PA" data-tipo="E" data-cpf="${aluno.cpf}" style="color:#D97706; border-color:#FCD34D;">PA</button>
                     </div>
-                    <div class="motivo-fj-container ${entAtiva === 'FJ' ? '' : 'hidden'} mt-1" id="fj-E-${aluno.cpf}">
+                    <div class="motivo-fj-container ${['FJ', 'PA'].includes(entAtiva) ? '' : 'hidden'} mt-1" id="fj-E-${aluno.cpf}">
                         <select class="input-select" style="padding: 0.2rem; font-size: 0.75rem; height: auto;">
                             <option value="">Motivo...</option>
-                            <option value="Atestado Médico" ${motivEnt === 'Atestado Médico' ? 'selected' : ''}>Atestado Médico</option>
+                            <option value="Trânsito/Transporte" ${motivEnt === 'Trânsito/Transporte' ? 'selected' : ''}>Trânsito/Transporte</option>
                             <option value="Solicitação dos Pais" ${motivEnt === 'Solicitação dos Pais' ? 'selected' : ''}>Solicitação Pais</option>
                             <option value="Saída Antecipada" ${motivEnt === 'Saída Antecipada' ? 'selected' : ''}>Saída Antecipada</option>
                         </select>
@@ -805,11 +1045,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="btn-chamada ${sClsP}" data-val="P" data-tipo="S" data-cpf="${aluno.cpf}">P</button>
                         <button class="btn-chamada ${sClsF}" data-val="F" data-tipo="S" data-cpf="${aluno.cpf}">F</button>
                         <button class="btn-chamada ${sClsFJ}" data-val="FJ" data-tipo="S" data-cpf="${aluno.cpf}">FJ</button>
+                        <button class="btn-chamada ${sClsPA}" data-val="PA" data-tipo="S" data-cpf="${aluno.cpf}" style="color:#D97706; border-color:#FCD34D;">PA</button>
                     </div>
-                    <div class="motivo-fj-container ${saiAtiva === 'FJ' ? '' : 'hidden'} mt-1" id="fj-S-${aluno.cpf}">
+                    <div class="motivo-fj-container ${['FJ', 'PA'].includes(saiAtiva) ? '' : 'hidden'} mt-1" id="fj-S-${aluno.cpf}">
                         <select class="input-select" style="padding: 0.2rem; font-size: 0.75rem; height: auto;">
                             <option value="">Motivo...</option>
-                            <option value="Atestado Médico" ${motivSai === 'Atestado Médico' ? 'selected' : ''}>Atestado Médico</option>
+                            <option value="Trânsito/Transporte" ${motivSai === 'Trânsito/Transporte' ? 'selected' : ''}>Trânsito/Transporte</option>
                             <option value="Solicitação dos Pais" ${motivSai === 'Solicitação dos Pais' ? 'selected' : ''}>Solicitação Pais</option>
                             <option value="Saída Antecipada" ${motivSai === 'Saída Antecipada' ? 'selected' : ''}>Saída Antecipada</option>
                         </select>
@@ -838,16 +1079,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Remove selected visual dos irmãos
                 const grupoBtns = document.querySelectorAll(`.btn-chamada[data-tipo="${tipo}"][data-cpf="${cpf}"]`);
-                grupoBtns.forEach(b => b.classList.remove('selected', 'selected-p', 'selected-f', 'selected-fj'));
+                grupoBtns.forEach(b => b.classList.remove('selected', 'selected-p', 'selected-f', 'selected-fj', 'selected-pa'));
                 
                 // Add select class com base no valor
                 btn.classList.add('selected');
                 if (val === 'P') btn.classList.add('selected-p');
                 if (val === 'F') btn.classList.add('selected-f');
                 if (val === 'FJ') btn.classList.add('selected-fj');
+                if (val === 'PA') btn.classList.add('selected-pa');
                 
                 const fjContainer = document.getElementById(`fj-${tipo}-${cpf}`);
-                if (val === 'FJ') {
+                if (val === 'FJ' || val === 'PA') {
                     fjContainer.classList.remove('hidden');
                 } else {
                     fjContainer.classList.add('hidden');
@@ -868,6 +1110,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!entradaBtn || !saidaBtn) {
             spanStatus.className = 'badge badge-pending consolidado-status';
             spanStatus.textContent = 'Pendente';
+            spanStatus.style.background = '#E2E8F0';
+            spanStatus.style.color = '#475569';
             return;
         }
 
@@ -877,14 +1121,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (eVal === 'FJ' || sVal === 'FJ') {
             final = 'P'; // A falta justificada anula a falta global
-        } else if (eVal === 'P' && sVal === 'P') {
+        } else if (eVal === 'F' || sVal === 'F') {
+            final = 'F'; // Qualquer F puro, zera o status global (na escola estadual)
+        } else if (eVal === 'PA' || sVal === 'PA') {
+            final = 'PA';
+        } else {
             final = 'P';
-        } else if (eVal === 'P' && sVal === 'F') {
-            final = 'F';
-        } else if (eVal === 'F' && sVal === 'F') {
-            final = 'F';
-        } else if (eVal === 'F' && sVal === 'P') {
-            final = 'F'; // Se não foi embora na entrada mas está pres na saída? Atípico, mas sem Entrada é F
         }
 
         if (final === 'P') {
@@ -892,6 +1134,11 @@ document.addEventListener('DOMContentLoaded', () => {
             spanStatus.textContent = 'Presente';
             spanStatus.style.background = '#D1FAE5';
             spanStatus.style.color = '#059669';
+        } else if (final === 'PA') {
+            spanStatus.className = 'badge consolidado-status';
+            spanStatus.textContent = 'Atraso';
+            spanStatus.style.background = '#FEF3C7';
+            spanStatus.style.color = '#D97706';
         } else {
             spanStatus.className = 'badge text-danger consolidado-status';
             spanStatus.textContent = 'Faltou';
@@ -953,8 +1200,12 @@ document.addEventListener('DOMContentLoaded', () => {
              // Adicionar à fila de sincronização (Salvamento Híbrido)
              let queue = JSON.parse(localStorage.getItem('rvs_sync_queue')) || [];
              queue.push({
-                 date: dateStr,
-                 turma: turma,
+                 tipo: "FREQUENCIA",
+                 dados: {
+                     date: dateStr,
+                     turma: turma,
+                     alunos: freqAll[dateStr][turma]
+                 },
                  timestamp: new Date().toISOString()
              });
              localStorage.setItem('rvs_sync_queue', JSON.stringify(queue));
@@ -1192,8 +1443,23 @@ document.addEventListener('DOMContentLoaded', () => {
             ocorrenciasGlobais[cpf].push({
                 dataHora, tipo, comunicar, motivo, autor, dataInicio, dataRetorno
             });
-            
             localStorage.setItem('rvs_ocorrencias', JSON.stringify(ocorrenciasGlobais));
+            
+            // Fila de Sincronização
+            let syncQueue = JSON.parse(localStorage.getItem('rvs_sync_queue')) || [];
+            syncQueue.push({
+                tipo: "OCORRENCIA",
+                dados: {
+                    cpf: cpf,
+                    turma: selectTurmaOcor.value,
+                    dataHora, tipo, comunicar, motivo, dataInicio, dataRetorno
+                },
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('rvs_sync_queue', JSON.stringify(syncQueue));
+            
+            // Tenta sincronizar agora se on-line
+            if (navigator.onLine && typeof syncPendingData === 'function') syncPendingData();
             
             document.getElementById('ocor-motivo').value = '';
             document.getElementById('ocor-data-inicio').value = '';
@@ -1714,6 +1980,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const networkStatus = document.getElementById('network-status');
     const syncQueueKey = 'rvs_sync_queue';
 
+    window.showToast = function(message) {
+        let toastEl = document.getElementById('global-toast');
+        if (!toastEl) {
+            toastEl = document.createElement('div');
+            toastEl.id = 'global-toast';
+            toastEl.style.position = 'fixed';
+            toastEl.style.bottom = '20px';
+            toastEl.style.right = '20px';
+            toastEl.style.backgroundColor = '#10B981'; // Green
+            toastEl.style.color = '#FFFFFF';
+            toastEl.style.padding = '12px 24px';
+            toastEl.style.borderRadius = '8px';
+            toastEl.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.1)';
+            toastEl.style.fontWeight = '500';
+            toastEl.style.zIndex = '9999';
+            toastEl.style.transition = 'opacity 0.3s, transform 0.3s';
+            document.body.appendChild(toastEl);
+        }
+        
+        toastEl.innerHTML = `<i class="ph ph-check-circle" style="vertical-align: middle; margin-right: 8px; font-size: 1.25rem;"></i> ${message}`;
+        toastEl.style.opacity = '1';
+        toastEl.style.transform = 'translateY(0)';
+        
+        setTimeout(() => {
+            toastEl.style.opacity = '0';
+            toastEl.style.transform = 'translateY(20px)';
+        }, 4000);
+    }
+
     function updateNetworkStatus() {
         if (!networkStatus) return;
         if (navigator.onLine) {
@@ -1726,17 +2021,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.syncPendingData = function() {
+    // Configuração do Back-end Google Sheets
+    const URL_DO_WEBAPP = 'https://script.google.com/macros/s/AKfycbw-NhyyFWLcgg2OA9UWcLPZgYwc-U6dcdqa223zqaDb7txNWDM2PrRCvemAuxVNFPRImQ/exec';
+
+    window.syncPendingData = async function() {
         let queue = JSON.parse(localStorage.getItem(syncQueueKey)) || [];
-        if (queue.length > 0) {
-            console.log(`[Sync] Iniciando sincronização de ${queue.length} pacotes de frequência para o servidor...`);
-            
-            // Simular um POST para o backend
-            setTimeout(() => {
-                console.log('[Sync] Dados enviados com sucesso!');
-                localStorage.removeItem(syncQueueKey);
-                alert(`Sincronização concluída: ${queue.length} consolidação(ões) de frequência foram enviadas ao servidor.`);
-            }, 1000);
+        if (queue.length === 0) return;
+
+        const userStr = localStorage.getItem('rvs_usuarioAtivo');
+        const user = userStr ? JSON.parse(userStr) : {email: 'offline_unknown'};
+        const usuarioLogado = user.email;
+
+        console.log(`[Sync] Processando fila de ${queue.length} ações...`);
+        let origLength = queue.length;
+        
+        while (queue.length > 0) {
+            let item = queue[0];
+            const payload = {
+                tipo: item.tipo,
+                autor: usuarioLogado,
+                dados: item.tipo === "FREQUENCIA" ? [item.dados] : item.dados
+            };
+
+            try {
+                const response = await fetch(URL_DO_WEBAPP, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    queue.shift(); // Concluído
+                    localStorage.setItem(syncQueueKey, JSON.stringify(queue));
+                } else {
+                    console.error('[Sync] Erro do Google:', result.message || result.info);
+                    break;
+                }
+            } catch (error) {
+                console.error('[Sync] Falha de internet:', error);
+                break;
+            }
+        }
+        
+        if (origLength > 0 && queue.length < origLength) {
+            window.showToast("Dados sincronizados com a Planilha Mestra");
         }
     }
 
@@ -1744,5 +2074,153 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('offline', updateNetworkStatus);
     // Dispara a verificação logo ao abrir para atualizar o badge apropriadamente
     updateNetworkStatus();
-    
+
+    // ==========================================
+    // 14. MEU PERFIL (DOSSIÊ DO LOGADO)
+    // ==========================================
+    const btnMeuPerfil = document.getElementById('meu-perfil-btn');
+    if (btnMeuPerfil) {
+        btnMeuPerfil.addEventListener('click', (e) => {
+            e.preventDefault();
+            const userStr = localStorage.getItem('rvs_usuarioAtivo');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                document.getElementById('perfil-nome').textContent = user.nome;
+                document.getElementById('perfil-cargo').textContent = user.role === 'manager' ? 'Gestor Administrativo' : 'Professor Titular';
+                document.getElementById('perfil-email').textContent = user.email;
+                document.getElementById('perfil-nivel').textContent = user.role.toUpperCase();
+                document.getElementById('perfil-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&size=150&background=1E3A8A&color=fff`;
+            }
+            document.getElementById('meu-perfil-modal').classList.remove('hidden');
+        });
+    }
+
+    // ==========================================
+    // 15. CÂMERA NATIVA (WEBRTC) & COMPRESSÃO
+    // ==========================================
+    const cameraModal = document.getElementById('camera-capture-modal');
+    const videoStream = document.getElementById('camera-stream');
+    const cameraCanvas = document.getElementById('camera-canvas');
+    let currentStream = null;
+    let cameraTarget = null; // 'novo-aluno' ou 'perfil'
+    let currentFacingMode = 'user'; // 'environment' (traseira) ou 'user' (selfie)
+
+    window.abrirCamera = async function(target, preferredMode = 'environment') {
+        cameraTarget = target;
+        currentFacingMode = preferredMode;
+        if(cameraModal) cameraModal.classList.remove('hidden');
+        await iniciarStream();
+    }
+
+    async function iniciarStream() {
+        pararCamera(false);
+        try {
+            const constraints = {
+                video: { facingMode: currentFacingMode }
+            };
+            currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+            if(videoStream) videoStream.srcObject = currentStream;
+        } catch (err) {
+            alert('Não foi possível acessar a câmera: ' + err.message + ' (Tente Escolher Arquivo na Galeria)');
+            pararCamera(true);
+        }
+    }
+
+    function pararCamera(esconderModal = true) {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+        if (videoStream) {
+            videoStream.srcObject = null;
+        }
+        if (esconderModal && cameraModal) {
+            cameraModal.classList.add('hidden');
+        }
+    }
+
+    // Botões Câmera Modal
+    document.getElementById('btn-close-camera')?.addEventListener('click', () => pararCamera(true));
+
+    document.getElementById('btn-switch-camera')?.addEventListener('click', () => {
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        iniciarStream();
+    });
+
+    document.getElementById('btn-capture-photo')?.addEventListener('click', () => {
+        if (!currentStream || !videoStream || !cameraCanvas) return;
+        
+        // Pega as dimensões reais do video (podem variar do CSS)
+        const vWidth = videoStream.videoWidth;
+        const vHeight = videoStream.videoHeight;
+        
+        if (vWidth === 0 || vHeight === 0) return;
+
+        // Limite máximo de largura: 800px pra evitar sobrecarregar BD e Payload Google Apps Script
+        const MAX_WIDTH = 800;
+        let scale = 1;
+        if (vWidth > MAX_WIDTH) {
+            scale = MAX_WIDTH / vWidth;
+        }
+
+        const newWidth = Math.floor(vWidth * scale);
+        const newHeight = Math.floor(vHeight * scale);
+
+        cameraCanvas.width = newWidth;
+        cameraCanvas.height = newHeight;
+        
+        const ctx = cameraCanvas.getContext('2d');
+        ctx.drawImage(videoStream, 0, 0, newWidth, newHeight);
+
+        // Compressão em JPEG 80% (Base64)
+        const base64Img = cameraCanvas.toDataURL('image/jpeg', 0.8);
+        pararCamera(true);
+
+        processarFotoCapturada(cameraTarget, base64Img);
+    });
+
+    function processarFotoCapturada(target, base64Img) {
+        if (target === 'novo-aluno') {
+            const previewImg = document.getElementById('novo-aluno-foto-preview');
+            if(previewImg) previewImg.src = base64Img;
+            const container = document.getElementById('novo-aluno-preview-container');
+            if(container) container.style.display = 'block';
+            window.tempNovoAlunoBase64 = base64Img; // Cache local auxiliar pra hora de salvar Novo Aluno
+        } else if (target === 'perfil') {
+            const avatarImg = document.getElementById('perfil-avatar');
+            if(avatarImg) avatarImg.src = base64Img;
+
+            // Salva na persistência local do Manager/Professor
+            const userStr = localStorage.getItem('rvs_usuarioAtivo');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                user.foto = base64Img;
+                localStorage.setItem('rvs_usuarioAtivo', JSON.stringify(user));
+                
+                // Dispara sincronização para a nuvem
+                let syncQueue = JSON.parse(localStorage.getItem('rvs_sync_queue')) || [];
+                syncQueue.push({
+                    tipo: "ATUALIZAR_PERFIL",
+                    dados: user, // user contém 'foto' e 'email'
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('rvs_sync_queue', JSON.stringify(syncQueue));
+                
+                if (navigator.onLine && typeof window.syncPendingData === 'function') window.syncPendingData();
+            }
+        }
+    }
+
+    // Acionar câmera do Perfil
+    document.getElementById('btn-camera-perfil')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.abrirCamera('perfil', 'user'); // User = Selfie
+    });
+
+    // Acionar câmera do Novo Aluno
+    document.getElementById('btn-camera-novo-aluno')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.abrirCamera('novo-aluno', 'environment'); // Environment = Câmera Traseira
+    });
+
 });
