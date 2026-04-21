@@ -529,10 +529,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
-                    <div class="student-row">
-                        <div class="student-avatar" style="background:${aluno.avatarBg};color:${aluno.avatarColor};border:1px solid #E2E8F0;">${aluno.initials}</div>
-                        <span class="student-name">${aluno.aluno}</span>
-                    </div>
+                    <a href="#" onclick="window.abrirFichaAluno('${aluno.cpf}'); return false;" class="student-row text-decoration-none">
+                        <div class="student-avatar shadow-sm" style="background:${aluno.avatarBg};color:${aluno.avatarColor};border:1px solid #E2E8F0;">${aluno.initials}</div>
+                        <span class="student-name fw-semibold">${aluno.aluno}</span>
+                    </a>
                 </td>
                 <td><span class="badge" style="background:#FEF3C7; color:#D97706;">${aluno.turma}</span></td>
                 <td>${aluno.email}</td>
@@ -550,18 +550,126 @@ document.addEventListener('DOMContentLoaded', () => {
         const aluno = alunosCadastrados.find(a => a.cpf === cpf);
         if(!aluno) return;
         
+        // 1. Dados Básicos do Cabeçalho
         document.getElementById('ficha-nome').textContent = aluno.aluno;
         document.getElementById('ficha-turma').textContent = aluno.turma;
         document.getElementById('ficha-cpf').textContent = aluno.cpf;
-        document.getElementById('ficha-idade').textContent = aluno.idade || '--';
+        
+        // Gerando matrícula pseudo-real baseada no sistema ou timestamp
+        const matricula = aluno.matricula || (new Date().getFullYear()) + cpf.replace(/\D/g, '').substring(0,6);
+        document.getElementById('ficha-matricula').textContent = matricula;
+
+        // Foto com fallback Câmera/Placeholder
+        document.getElementById('ficha-foto').src = aluno.fotoBase64 || `https://ui-avatars.com/api/?name=${encodeURIComponent(aluno.aluno)}&size=90&background=1E3A8A&color=fff`;
+
+        // Aba: VISÃO GERAL (Informações)
+        document.getElementById('ficha-idade').textContent = aluno.dataNasc ? calcularIdade(aluno.dataNasc) : (aluno.idade || '--');
         document.getElementById('ficha-email').textContent = aluno.email || '--';
         document.getElementById('ficha-tel').textContent = aluno.telefone || '--';
         document.getElementById('ficha-mae').textContent = aluno.nomeMae || '--';
         document.getElementById('ficha-pai').textContent = aluno.nomePai || '--';
-        document.getElementById('ficha-foto').src = aluno.fotoBase64 || `https://ui-avatars.com/api/?name=${encodeURIComponent(aluno.aluno)}&size=80&background=1E3A8A&color=fff`;
+        document.getElementById('ficha-endereco').textContent = aluno.endereco || '--';
+
+        // 2. Extrator de Frequência (Percorre o Cache Global)
+        const dbFreq = JSON.parse(localStorage.getItem('rvs_frequencia')) || {};
+        let tP = 0, tF = 0, tPA = 0, tFJ = 0;
+        let htmlFreq = '';
         
+        // As chaves são geralmente Datas (ex: 2026-04-20)
+        Object.keys(dbFreq).forEach(keyDia => {
+            const turmasDia = dbFreq[keyDia];
+            // Precisamos varrer todas as turmas daquele dia para achar o CPF do aluno
+            Object.keys(turmasDia).forEach(turmaVar => {
+                const registros = turmasDia[turmaVar];
+                if (registros[aluno.cpf]) {
+                    const reg = registros[aluno.cpf];
+                    
+                    // Lógica independente de Atraso e Visualização Analítica (Graves)
+                    if (reg.e === 'PA' || reg.s === 'PA') {
+                        tPA++; // Histórico de Pontualidade pura, independente do dia
+                    }
+
+                    // Cálculo da Frequência Consolidada do Dia (Boleto final do aluno)
+                    let finalConsolidado = '';
+                    if (reg.e === 'FJ' || reg.s === 'FJ') finalConsolidado = 'FJ';
+                    else if (reg.e === 'F' || reg.s === 'F') finalConsolidado = 'F'; // Qualquer F quebra o dia pra F
+                    else finalConsolidado = 'P'; // Se rolou P ou P+PA (Atraso com permanência), dia vale PRESENÇA (P) no diário!
+                    
+                    if (finalConsolidado === 'P') tP++;
+                    else if (finalConsolidado === 'F') tF++;
+                    else if (finalConsolidado === 'FJ') tFJ++;
+
+                    // Renderiza histórico detalhado caso haja anomalias (incluindo o próprio atraso)
+                    if (reg.e === 'F' || reg.s === 'F' || reg.e === 'PA' || reg.s === 'PA' || reg.e === 'FJ' || reg.s === 'FJ') {
+                        const dataSplited = keyDia.split('-');
+                        const diaLegivel = dataSplited.length === 3 ? `${dataSplited[2]}/${dataSplited[1]}` : keyDia;
+                        
+                        const makeSpan = (val) => {
+                            if(val === 'F') return '<span class="text-danger fw-bold">Falta</span>';
+                            if(val === 'PA') return '<span class="text-warning text-dark fw-bold">Atraso</span>';
+                            if(val === 'FJ') return '<span class="text-info text-dark fw-bold">Justif.</span>';
+                            return 'Presença';
+                        };
+
+                        htmlFreq += `<tr><td class="text-secondary fw-medium">${diaLegivel}</td><td>${makeSpan(reg.e)}</td><td>${makeSpan(reg.s)}</td></tr>`;
+                    }
+                }
+            });
+        });
+
+        document.getElementById('dossie-tot-p').textContent = tP;
+        document.getElementById('dossie-tot-f').textContent = tF;
+        document.getElementById('dossie-tot-pa').textContent = tPA;
+        const domFJ = document.getElementById('dossie-tot-fj');
+        if (domFJ) domFJ.textContent = tFJ;
+        
+        if (htmlFreq !== '') {
+            document.getElementById('dossie-historico-freq').innerHTML = htmlFreq;
+        } else {
+            document.getElementById('dossie-historico-freq').innerHTML = `<tr><td colspan="3" class="text-center text-muted small py-3">Nenhum evento grave computado.</td></tr>`;
+        }
+
+        // 3. Extrator de Ocorrências e Histórico Transferências
+        const dbOcorrencias = JSON.parse(localStorage.getItem('rvs_ocorrencias')) || {};
+        const ocorAluno = dbOcorrencias[aluno.cpf] || [];
+        
+        if (ocorAluno.length > 0) {
+            let mkc = '';
+            ocorAluno.forEach(o => {
+                const dataDisplay = o.dataHora || o.data || 'Data N/A';
+                const descricaoDisplay = o.motivo || o.descricao || 'Sem detalhes fornecidos.';
+                mkc += `<div class="p-3 mb-2 border rounded border-danger border-opacity-50 bg-danger bg-opacity-10 text-danger text-start">
+                    <div class="fw-bold"><i class="ph ph-warning"></i> ${dataDisplay} - ${o.tipo}</div>
+                    <div class="small mt-1 text-dark">${descricaoDisplay}</div>
+                </div>`;
+            });
+            document.getElementById('dossie-lista-ocorrencias').innerHTML = mkc;
+        } else {
+            document.getElementById('dossie-lista-ocorrencias').innerHTML = `<div class="text-center text-secondary py-4 bg-light rounded"><i class="ph ph-check-circle fs-1 text-success mb-2"></i><br>Nenhuma ocorrência atrelada a este aluno. Excelente.</div>`;
+        }
+
+        const histTransf = document.getElementById('lista-movimentacoes-dossie');
+        if (aluno.historicoTurnos && aluno.historicoTurnos.length > 0) {
+            histTransf.innerHTML = aluno.historicoTurnos.map(h => `<li class="list-group-item text-secondary py-2 small border-bottom"><i class="ph ph-arrows-left-right text-primary"></i> ${h}</li>`).join('');
+        } else {
+            histTransf.innerHTML = `<li class="list-group-item text-secondary py-1 text-center small border-0 bg-transparent">Nenhuma movimentação no ano.</li>`;
+        }
+        
+        // Resetar aba default pra Visão Geral ao abrir
+        const firstTabEl = document.querySelector('#dossie-tabs button[data-bs-target="#tab-dados"]');
+        if (firstTabEl) new bootstrap.Tab(firstTabEl).show();
+
         document.getElementById('ficha-aluno-modal').classList.remove('hidden');
     };
+
+    function calcularIdade(nascDateStr) {
+        if (!nascDateStr) return '';
+        const dob = new Date(nascDateStr);
+        if (isNaN(dob)) return nascDateStr;
+        const diff_ms = Date.now() - dob.getTime();
+        const age_dt = new Date(diff_ms); 
+        return Math.abs(age_dt.getUTCFullYear() - 1970) + ' anos';
+    }
 
     // ==========================================
     // LÓGICA DE ATUALIZAÇÂO FOTO DO DOSSIÊ
@@ -1512,240 +1620,330 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 11. DASHBOARD DINÂMICO
     // ==========================================
+    function getTurnoFromTurma(turmaStr) {
+        if(!turmaStr) return 'ALL';
+        if(turmaStr.startsWith('M1MN') || turmaStr.startsWith('M2MN') || turmaStr.startsWith('M3MN')) return 'M';
+        if(turmaStr.startsWith('M1TN') || turmaStr.startsWith('M2TN') || turmaStr.startsWith('M3TN')) return 'T';
+        if(turmaStr.startsWith('M1NN') || turmaStr.startsWith('M2NN') || turmaStr.startsWith('M3NN') || turmaStr.startsWith('M1NNJ') || turmaStr.startsWith('M2NNJ') || turmaStr.startsWith('M1CF')) return 'N';
+        return 'ALL';
+    }
+
+    let dashChartInstance = null;
+
     function atualizarDashboard() {
-        const spanTotalAlunos = document.getElementById('dash-total-alunos');
-        const spanPresencaHoje = document.getElementById('dash-presenca-hoje');
-        const spanOcorrenciasMes = document.getElementById('dash-ocorrencias-mes');
-        const spanTurmasAtivas = document.getElementById('dash-turmas-ativas');
-        const tbodyEvasao = document.getElementById('dash-evasao-tbody');
-        const tbodySaidaIndevida = document.getElementById('dash-saida-indevida-tbody');
-
-        if (!spanTotalAlunos) return;
-
-        // 1. Total de Alunos Matriculados
+        const filtroTurnoDom = document.getElementById('dash-filtro-turno');
+        const turnoSelecionado = filtroTurnoDom ? filtroTurnoDom.value : 'ALL';
+        
+        // Obter bases de dados
         const dadosAlunos = JSON.parse(localStorage.getItem('rvs_alunos_cadastrados')) || [];
-        spanTotalAlunos.textContent = dadosAlunos.length;
-
-        // 2. Turmas Ativas
-        const turmasUnicas = [...new Set(dadosAlunos.map(a => a.turma).filter(Boolean))];
-        spanTurmasAtivas.textContent = turmasUnicas.length;
-
-        // 3. Ocorrências do Mês Atual
+        const dadosFreq = JSON.parse(localStorage.getItem('rvs_frequencia')) || {};
         const dadosOcorrencias = JSON.parse(localStorage.getItem('rvs_ocorrencias')) || {};
-        let ocorrenciasMesVal = 0;
-        const currentMonth = new Date().getMonth() + 1; // 1-12
-        Object.values(dadosOcorrencias).forEach(arrayAc => {
-            arrayAc.forEach(oc => {
-                if (oc.dataHora) {
-                    const [datePart] = oc.dataHora.split(' ');
-                    if (datePart) {
-                        const monthPart = parseInt(datePart.split('/')[1]);
-                        if (monthPart === currentMonth) {
-                            ocorrenciasMesVal++;
-                        }
-                    }
+
+        // Filtrar Alunos pelo Turno
+        const alunosFiltrados = turnoSelecionado === 'ALL' 
+            ? dadosAlunos 
+            : dadosAlunos.filter(a => getTurnoFromTurma(a.turma) === turnoSelecionado);
+
+        const cpfsNoTurno = alunosFiltrados.map(a => a.cpf);
+        const turmasNoTurno = [...new Set(alunosFiltrados.map(a => a.turma))];
+
+        // ==========================================
+        // 1. STATUS DE LANÇAMENTO (Hoje)
+        // ==========================================
+        const hojeStr = new Date().toISOString().split('T')[0];
+        const totalTurmasTrabalhando = turmasNoTurno.length;
+        let turmasLancadasHoje = 0;
+
+        if (dadosFreq[hojeStr]) {
+            turmasNoTurno.forEach(t => {
+                if (dadosFreq[hojeStr][t]) turmasLancadasHoje++;
+            });
+        }
+
+        const domStatusLancamento = document.getElementById('dash-status-lancamento');
+        if (domStatusLancamento) domStatusLancamento.textContent = `${turmasLancadasHoje}/${totalTurmasTrabalhando}`;
+
+        // ==========================================
+        // 2. HOJE VS. MÉDIA HISTÓRICA DE FALTAS
+        // ==========================================
+        const datasDisponiveis = Object.keys(dadosFreq).sort();
+        let totalFaltasHistorico = 0;
+        let totalDiasHistorico = datasDisponiveis.length;
+
+        // Acumula faltas no histórico do turno
+        datasDisponiveis.forEach(dataKey => {
+            Object.keys(dadosFreq[dataKey]).forEach(turmaKey => {
+                if (turnoSelecionado === 'ALL' || getTurnoFromTurma(turmaKey) === turnoSelecionado) {
+                    Object.values(dadosFreq[dataKey][turmaKey]).forEach(reg => {
+                        const final = (reg.e === 'F' || reg.s === 'F') ? 'F' : 'P';
+                        if (final === 'F') totalFaltasHistorico++;
+                    });
                 }
             });
         });
-        spanOcorrenciasMes.textContent = ocorrenciasMesVal;
 
-        // 4. Última Presença Média & Alerta de Evasão
-        const dadosFreq = JSON.parse(localStorage.getItem('rvs_frequencia')) || {};
-        const datasDisponiveis = Object.keys(dadosFreq).sort(); 
+        // Faltas de Hoje
+        let faltasHoje = 0;
+        if (dadosFreq[hojeStr]) {
+            Object.keys(dadosFreq[hojeStr]).forEach(turmaKey => {
+                if (turnoSelecionado === 'ALL' || getTurnoFromTurma(turmaKey) === turnoSelecionado) {
+                    Object.values(dadosFreq[hojeStr][turmaKey]).forEach(reg => {
+                        const final = (reg.e === 'F' || reg.s === 'F') ? 'F' : 'P';
+                        if (final === 'F') faltasHoje++;
+                    });
+                }
+            });
+        }
+
+        const mediaGeralDiaria = totalDiasHistorico > 0 ? (totalFaltasHistorico / totalDiasHistorico) : 0;
+        const diferencaFaltas = mediaGeralDiaria > 0 ? ((faltasHoje - mediaGeralDiaria) / mediaGeralDiaria) * 100 : 0;
+
+        const domMedia = document.getElementById('dash-media-faltas-val');
+        const domMediaTxt = document.getElementById('dash-media-faltas-txt');
+        const domMediaIco = document.getElementById('icone-media-faltas');
         
-        let somaPresencas = 0;
-        let totalRegistros = 0;
-        let mapFaltasEvasao = {}; // { cpf: acumuladoFaltasGerais }
+        if (domMedia && domMediaTxt) {
+            if (totalDiasHistorico === 0 || !dadosFreq[hojeStr] || turmasLancadasHoje === 0) {
+                domMedia.textContent = '--';
+                domMediaTxt.textContent = "Aguardando chamadas oficiais...";
+                domMediaIco.className = "ph ph-clock-counter-clockwise fs-3 text-secondary";
+            } else {
+                const perc = Math.abs(Math.round(diferencaFaltas));
+                if (diferencaFaltas > 0) {
+                    domMedia.textContent = `+${perc}% Faltas`;
+                    domMedia.classList.add('text-danger');
+                    domMedia.classList.remove('text-success');
+                    domMediaTxt.textContent = "Acima da média geral do turno";
+                    domMediaIco.className = "ph ph-trend-up fs-3 text-danger";
+                } else if (diferencaFaltas < 0) {
+                    domMedia.textContent = `-${perc}% Faltas`;
+                    domMedia.classList.remove('text-danger');
+                    domMedia.classList.add('text-success');
+                    domMediaTxt.textContent = "Abaixo (Melhor) que a média";
+                    domMediaIco.className = "ph ph-trend-down fs-3 text-success";
+                } else {
+                    domMedia.textContent = "Estável";
+                    domMedia.classList.remove('text-danger', 'text-success');
+                    domMediaIco.className = "ph ph-minus fs-3 text-secondary";
+                    domMediaTxt.textContent = "Dentro da média padrão do turno";
+                }
+            }
+        }
 
-        if (datasDisponiveis.length === 0) {
-            spanPresencaHoje.textContent = '-';
-            tbodyEvasao.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Sem dados de frequência disponíveis para análise.</td></tr>';
-        } else {
-            // Média de Presença da ÚLTIMA data cadastrada
-            const lastDate = datasDisponiveis[datasDisponiveis.length - 1];
-            const turmasDaUltimaData = dadosFreq[lastDate];
-            
-            Object.values(turmasDaUltimaData).forEach(cpfsNaTurma => {
-                Object.values(cpfsNaTurma).forEach(freqRegistro => {
-                    totalRegistros++;
-                    const ep = freqRegistro.e;
-                    const sp = freqRegistro.s;
-                    // Considerando Presença se a pessoa não faltou em ambos. Se for Falta Completa, nao conta ponto.
-                    if (ep !== 'F' && ep !== 'FJ' && sp !== 'F' && sp !== 'FJ') {
-                        somaPresencas++;
+        // ==========================================
+        // 3. GRÁFICO DE TENDÊNCIA (Últimos 7 dias)
+        // ==========================================
+        const ctx = document.getElementById('dash-chart');
+        if (ctx && window.Chart) {
+            const ultimos7Dias = datasDisponiveis.slice(-7);
+            const labelsData = [];
+            const pontosDataFaltas = [];
+
+            ultimos7Dias.forEach(d => {
+                const dSplited = d.split('-');
+                labelsData.push(`${dSplited[2]}/${dSplited[1]}`);
+                
+                let fNoDia = 0;
+                Object.keys(dadosFreq[d]).forEach(tk => {
+                    if(turnoSelecionado === 'ALL' || getTurnoFromTurma(tk) === turnoSelecionado) {
+                         Object.values(dadosFreq[d][tk]).forEach(reg => {
+                             if(reg.e === 'F' || reg.s === 'F') fNoDia++;
+                         });
                     }
                 });
+                pontosDataFaltas.push(fNoDia);
             });
 
-            const percentual = totalRegistros > 0 ? Math.round((somaPresencas / totalRegistros) * 100) : 0;
-            spanPresencaHoje.textContent = `${percentual}%`;
+            if (dashChartInstance) {
+                dashChartInstance.destroy();
+            }
 
-            // Escaneamento Global Evasão e Saída Indevida (Todas as Datas Disponíveis)
-            let listSaidaIndevida = [];
-
-            datasDisponiveis.forEach(d => {
-                const dataBr = d.split('-').reverse().join('/');
-                Object.values(dadosFreq[d]).forEach(cpfs => {
-                    Object.keys(cpfs).forEach(cpf => {
-                        const rec = cpfs[cpf];
-                        if (rec.e === 'F' && rec.s === 'F') { 
-                            mapFaltasEvasao[cpf] = (mapFaltasEvasao[cpf] || 0) + 1;
-                        }
-                        if ((rec.e === 'P' && rec.s === 'F') || (rec.e === 'F' && rec.s === 'P')) {
-                            let exist = listSaidaIndevida.find(i => i.cpf === cpf);
-                            if (!exist) {
-                                const alunoObj = dadosAlunos.find(a => a.cpf === cpf);
-                                if (alunoObj) {
-                                    listSaidaIndevida.push({
-                                        cpf: cpf,
-                                        aluno: alunoObj.aluno,
-                                        turma: alunoObj.turma,
-                                        datas: [dataBr]
-                                    });
-                                }
-                            } else {
-                                if (!exist.datas.includes(dataBr)) {
-                                    exist.datas.push(dataBr);
-                                }
-                            }
-                        }
-                    });
-                });
-            });
-
-            const vulneraveis = [];
-            Object.keys(mapFaltasEvasao).forEach(cpf => {
-                if (mapFaltasEvasao[cpf] >= 3) {
-                    const alunoObj = dadosAlunos.find(a => a.cpf === cpf);
-                    if (alunoObj) {
-                        vulneraveis.push({
-                            aluno: alunoObj.aluno,
-                            turma: alunoObj.turma,
-                            qtdFaltas: mapFaltasEvasao[cpf]
-                        });
+            dashChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labelsData,
+                    datasets: [{
+                        label: 'Faltas Registradas',
+                        data: pontosDataFaltas,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#1E3A8A'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [2, 4] } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
+        }
 
-            vulneraveis.sort((a, b) => b.qtdFaltas - a.qtdFaltas);
+        // ==========================================
+        // 4. ALERTA CRÍTICO: Risco de Evasão (25% ou 3 Consecutivas)
+        // ==========================================
+        const tbodyEvasao = document.getElementById('dash-evasao-tbody');
+        if (tbodyEvasao) {
+            let vulneraveis = [];
+            const limiteFaltas = 12; // Base de 50 dias letivos bimestral (25% = 12)
+
+            alunosFiltrados.forEach(al => {
+                let historicoAluno = [];
+                // Reconstruir linha do tempo do aluno
+                datasDisponiveis.forEach(d => {
+                    let statusDia = 'P'; // Default
+                    if (dadosFreq[d] && dadosFreq[d][al.turma] && dadosFreq[d][al.turma][al.cpf]) {
+                        const reg = dadosFreq[d][al.turma][al.cpf];
+                        if (reg.e === 'F' || reg.s === 'F') statusDia = 'F';
+                        else if (reg.e === 'FJ' || reg.s === 'FJ') statusDia = 'FJ';
+                        else if (reg.e === 'PA' || reg.s === 'PA') statusDia = 'PA';
+                    } else {
+                        statusDia = null; // Não houve chamada
+                    }
+                    if (statusDia !== null) historicoAluno.push(statusDia);
+                });
+
+                const totaisGlobaisF = historicoAluno.filter(h => h === 'F').length;
+                // Contagem consecutivas recentes
+                let consecutivasRecentes = 0;
+                for (let i = historicoAluno.length - 1; i >= 0; i--) {
+                    if (historicoAluno[i] === 'F') consecutivasRecentes++;
+                    else if (historicoAluno[i] !== 'FJ') break;
+                }
+
+                if (totaisGlobaisF >= limiteFaltas || consecutivasRecentes >= 3) {
+                    let mot = totaisGlobaisF >= limiteFaltas ? 'Estourou 25%' : 'Falta Consecutiva (>3)';
+                    vulneraveis.push({ aluno: al.aluno, cpf: al.cpf, turma: al.turma, totalF: totaisGlobaisF, motivo: mot });
+                }
+            });
+
+            vulneraveis.sort((a,b) => b.totalF - a.totalF);
 
             if (vulneraveis.length === 0) {
-                tbodyEvasao.innerHTML = '<tr><td colspan="4" class="text-center" style="color: #059669; font-weight: 500; padding:1.5rem;"><i class="ph ph-check-circle" style="font-size:1.5rem; vertical-align:middle; margin-right:4px;"></i> Nenhum aluno alcançou a zona crítica de evasão (3+ Faltas Globais).</td></tr>';
+                tbodyEvasao.innerHTML = '<tr><td colspan="4" class="text-center" style="color: #059669; font-weight: 500; padding:1.5rem;"><i class="ph ph-check-circle fs-3 align-middle me-2"></i> Nenhum aluno detectado na malha crítica.</td></tr>';
             } else {
                 tbodyEvasao.innerHTML = '';
-                // Mostra no maximo o TOP 5 Piores
-                vulneraveis.slice(0, 5).forEach(v => {
+                vulneraveis.slice(0, 10).forEach(v => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><strong style="color: #1E293B;">${v.aluno}</strong></td>
-                        <td><span class="badge" style="background:#E2E8F0; color:#475569;">${v.turma}</span></td>
-                        <td class="text-center"><span style="color: #DC2626; font-weight: 800;">${v.qtdFaltas} dias</span></td>
-                        <td class="text-right"><button class="btn-outline" style="border-color:#DC2626; color:#DC2626; padding: 0.25rem 0.75rem; font-size: 0.8rem;" onclick="alert('Funcionalidade Web WhatsApp em breve!')"><i class="ph ph-whatsapp-logo"></i> Acionar</button></td>
+                        <td><strong class="text-dark border-0 p-0 text-decoration-none">${v.aluno}</strong></td>
+                        <td><span class="badge bg-light text-secondary border border-secondary border-opacity-25">${v.turma}</span></td>
+                        <td class="text-center">
+                            <span class="fw-bold ${v.motivo.includes('25') ? 'text-danger' : 'text-warning text-dark'}">${v.totalF} dias (${v.motivo})</span>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary shadow-sm rounded-pill" onclick="window.abrirFichaAluno('${v.cpf}')">Dossiê</button>
+                        </td>
                     `;
                     tbodyEvasao.appendChild(tr);
                 });
             }
+        }
 
-            if (listSaidaIndevida.length === 0) {
-                if (tbodySaidaIndevida) {
-                    tbodySaidaIndevida.innerHTML = '<tr><td colspan="4" class="text-center" style="color: #059669; font-weight: 500; padding:1.5rem;"><i class="ph ph-check-circle" style="font-size:1.5rem; vertical-align:middle; margin-right:4px;"></i> Nenhum aluno com saída não autorizada detectado.</td></tr>';
-                }
-            } else {
-                if (tbodySaidaIndevida) {
-                    tbodySaidaIndevida.innerHTML = '';
-                    listSaidaIndevida.forEach(v => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td><strong style="color: #1E293B;">${v.aluno}</strong></td>
-                            <td><span class="badge" style="background:#E2E8F0; color:#475569;">${v.turma}</span></td>
-                            <td class="text-center"><span style="color: #D97706; font-weight: 600;">${v.datas.join(', ')}</span></td>
-                            <td class="text-right"><button class="btn-outline" style="border-color:#D97706; color:#D97706; padding: 0.25rem 0.75rem; font-size: 0.8rem;" onclick="alert('Funcionalidade Web WhatsApp em breve!')"><i class="ph ph-whatsapp-logo"></i> Acionar</button></td>
-                        `;
-                        tbodySaidaIndevida.appendChild(tr);
+        // ==========================================
+        // 5. EVENTOS RECENTES (Ocorrências e Atrasos)
+        // ==========================================
+        const painelEventos = document.getElementById('dash-recent-events');
+        if (painelEventos) {
+            let eventosMistos = [];
+            // Coletar Ocorrências Ativas do Turno
+            Object.keys(dadosOcorrencias).forEach(cpfRec => {
+                const alObj = dadosAlunos.find(a => a.cpf === cpfRec);
+                if (alObj && (turnoSelecionado === 'ALL' || getTurnoFromTurma(alObj.turma) === turnoSelecionado)) {
+                    dadosOcorrencias[cpfRec].forEach(oc => {
+                        eventosMistos.push({ dataStr: oc.dataHora || oc.data, type: 'OCOR', icon: 'ph-warning', cor: 'danger', desc: oc.tipo, nome: alObj.aluno, cpf: alObj.cpf });
                     });
                 }
-            }
+            });
 
-            // ==========================================
-            // ALERTA DE RETORNO DE SUSPENSÃO
-            // ==========================================
-            const tbodyRetornoSuspensao = document.getElementById('dash-retorno-suspensao-tbody');
-            if (tbodyRetornoSuspensao) {
-                const hojeObj = new Date();
-                const hojeStr = `${hojeObj.getFullYear()}-${String(hojeObj.getMonth() + 1).padStart(2, '0')}-${String(hojeObj.getDate()).padStart(2, '0')}`;
-                
-                let retornosHoje = [];
-                const ocorrenciasGerais = JSON.parse(localStorage.getItem('rvs_ocorrencias')) || {};
-                
-                // Encontrar os alunos com retorno agendado para hoje
-                Object.keys(ocorrenciasGerais).forEach(cpf => {
-                    const historico = ocorrenciasGerais[cpf];
-                    historico.forEach(oc => {
-                        if (oc.tipo === 'Suspensão' && oc.dataRetorno === hojeStr) {
-                            // Achou uma suspensão cujo retorno é hoje
-                            const alunoObj = dadosAlunos.find(a => a.cpf === cpf);
-                            if (alunoObj) {
-                                // Evitar duplicatas caso tenha mais de uma (raro, mas possível)
-                                if (!retornosHoje.find(r => r.cpf === cpf)) {
-                                    retornosHoje.push({
-                                        cpf: cpf,
-                                        aluno: alunoObj.aluno,
-                                        turma: alunoObj.turma
-                                    });
-                                }
+            // Coletar Últimos Atrasos (Apenas dos últimos 3 dias pra não poluir)
+            datasDisponiveis.slice(-3).forEach(d => {
+                Object.keys(dadosFreq[d]).forEach(tk => {
+                    if (turnoSelecionado === 'ALL' || getTurnoFromTurma(tk) === turnoSelecionado) {
+                        Object.keys(dadosFreq[d][tk]).forEach(cpf => {
+                            const reg = dadosFreq[d][tk][cpf];
+                            if (reg.e === 'PA' || reg.s === 'PA') {
+                                const alObj = dadosAlunos.find(a => a.cpf === cpf);
+                                if(alObj) eventosMistos.push({ dataStr: d, type: 'ATRASO', icon: 'ph-clock', cor: 'warning', desc: 'Atrasado (PA)', nome: alObj.aluno, cpf: alObj.cpf });
                             }
-                        }
-                    });
+                        });
+                    }
                 });
+            });
 
-                if (retornosHoje.length === 0) {
-                    tbodyRetornoSuspensao.innerHTML = '<tr><td colspan="4" class="text-center" style="color: #059669; font-weight: 500; padding:1.5rem;"><i class="ph ph-check-circle" style="font-size:1.5rem; vertical-align:middle; margin-right:4px;"></i> Não há alunos com retorno programado para hoje.</td></tr>';
-                } else {
-                    tbodyRetornoSuspensao.innerHTML = '';
-                    retornosHoje.forEach(r => {
-                        // Verificar o comparecimento do aluno na Frequência de hoje
-                        let statusRetorno = 'Pendente de Chamada';
-                        let corStatus = '#64748B';
-                        let bdgColor = '#F1F5F9';
-                        
-                        // Busca se a chamada da turma dele já foi feita hoje e o status de Entrada (E)
-                        if (dadosFreq[hojeStr] && dadosFreq[hojeStr][r.turma] && dadosFreq[hojeStr][r.turma][r.cpf]) {
-                            const reg = dadosFreq[hojeStr][r.turma][r.cpf];
-                            if (reg.e === 'P') {
-                                statusRetorno = 'Retornou (Presente)';
-                                corStatus = '#059669'; // verde
-                                bdgColor = '#D1FAE5';
-                            } else if (reg.e === 'F' || reg.e === 'FJ') {
-                                statusRetorno = 'Faltou no Retorno';
-                                corStatus = '#DC2626'; // vermelho
-                                bdgColor = '#FEE2E2';
-                            }
-                        } else {
-                            // Chamada ainda não preenchida
-                            statusRetorno = 'Sem dados de chamada';
-                            corStatus = '#D97706'; // amarelo pendente
-                            bdgColor = '#FEF3C7';
-                        }
+            eventosMistos.sort((a,b) => new Date(b.dataStr) - new Date(a.dataStr));
 
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td><strong style="color: #1E293B;">${r.aluno}</strong></td>
-                            <td><span class="badge" style="background:#E2E8F0; color:#475569;">${r.turma}</span></td>
-                            <td class="text-center">
-                                <span class="badge" style="background:${bdgColor}; color:${corStatus}; font-weight: 600;">${statusRetorno}</span>
-                            </td>
-                            <td class="text-right">
-                                <button class="btn-outline" style="border-color:${corStatus}; color:${corStatus}; padding: 0.25rem 0.75rem; font-size: 0.8rem;" onclick="alert('Funcionalidade de alerta direto em breve!')">
-                                    <i class="ph ph-bell-ringing"></i> Alertar Falha
-                                </button>
-                            </td>
-                        `;
-                        tbodyRetornoSuspensao.appendChild(tr);
-                    });
-                }
+            if (eventosMistos.length === 0) {
+                painelEventos.innerHTML = '<div class="text-center text-secondary py-4 w-100"><i class="ph ph-check-circle fs-2 text-success"></i><br>Nenhum evento registrado.</div>';
+            } else {
+                painelEventos.innerHTML = '';
+                eventosMistos.slice(0, 6).forEach(ev => {
+                    painelEventos.innerHTML += `
+                    <div class="d-flex align-items-center justify-content-between p-2 border-bottom hover-bg-light" style="cursor:pointer;" onclick="window.abrirFichaAluno('${ev.cpf}')">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="p-2 text-bg-${ev.cor} bg-opacity-10 text-${ev.cor} rounded"><i class="ph ${ev.icon}"></i></div>
+                            <div style="line-height: 1.2;">
+                                <div class="fw-semibold text-dark small">${ev.nome.split(' ')[0]} ${ev.nome.split(' ')[1] || ''}</div>
+                                <div class="text-secondary" style="font-size:0.7rem;">${ev.desc}</div>
+                            </div>
+                        </div>
+                        <div class="text-muted" style="font-size:0.7rem;">${ev.dataStr.substring(0,10)}</div>
+                    </div>
+                    `;
+                });
             }
-        } // fecha o bloco if principal do dashboard
-    } // fecha função atualizarDashboard
+        }
+        
+        renderizarSaidaIndevida(dadosFreq, datasDisponiveis, alunosFiltrados);
+    }
+
+    function renderizarSaidaIndevida(dadosFreq, datasDisponiveis, alunosFiltrados) {
+        const tbodySaidaIndevida = document.getElementById('dash-saida-indevida-tbody');
+        if (!tbodySaidaIndevida) return;
+        
+        let listSaidaIndevida = [];
+        datasDisponiveis.forEach(d => {
+            const dataBr = d.split('-').reverse().join('/');
+            Object.keys(dadosFreq[d]).forEach(tk => {
+                Object.keys(dadosFreq[d][tk]).forEach(cpf => {
+                    const rec = dadosFreq[d][tk][cpf];
+                    if ((rec.e === 'P' && rec.s === 'F') || (rec.e === 'F' && rec.s === 'P')) {
+                        const alunoObj = alunosFiltrados.find(a => a.cpf === cpf); 
+                        if (alunoObj) {
+                            let exist = listSaidaIndevida.find(i => i.cpf === cpf);
+                            if (!exist) listSaidaIndevida.push({ cpf: cpf, aluno: alunoObj.aluno, turma: alunoObj.turma, datas: [dataBr] });
+                            else if (!exist.datas.includes(dataBr)) exist.datas.push(dataBr);
+                        }
+                    }
+                });
+            });
+        });
+
+        if (listSaidaIndevida.length === 0) {
+            tbodySaidaIndevida.innerHTML = '<tr><td colspan="4" class="text-center" style="color: #059669; font-weight: 500; padding:1.5rem;"><i class="ph ph-check-circle fs-3 align-middle me-2"></i> Nenhuma evasão intradiária detectada no turno.</td></tr>';
+        } else {
+            tbodySaidaIndevida.innerHTML = '';
+            listSaidaIndevida.forEach(v => {
+                tbodySaidaIndevida.innerHTML += `
+                    <tr>
+                        <td><strong class="text-dark">${v.aluno}</strong></td>
+                        <td><span class="badge bg-light border border-secondary text-secondary">${v.turma}</span></td>
+                        <td class="text-center text-warning fw-bold text-dark">${v.datas.join(', ')}</td>
+                        <td class="text-end"><button class="btn btn-sm btn-outline-warning text-dark rounded-pill" onclick="window.abrirFichaAluno('${v.cpf}')">Dossiê</button></td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    const domFiltroTurno = document.getElementById('dash-filtro-turno');
+    if (domFiltroTurno) domFiltroTurno.addEventListener('change', atualizarDashboard);
 
     // Inicialização final do app
     atualizarDashboard();
@@ -2053,20 +2251,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 
                 if (result.status === 'success') {
+                    console.log(`[AppSheet Sync] Sucesso: Pacote do tipo ${item.tipo} integrado!`);
                     queue.shift(); // Concluído
                     localStorage.setItem(syncQueueKey, JSON.stringify(queue));
                 } else {
-                    console.error('[Sync] Erro do Google:', result.message || result.info);
+                    console.error(`[AppSheet Sync] Falha P/ ${item.tipo}:`, result.message || result.info, 'Dados Enviados:', payload);
                     break;
                 }
             } catch (error) {
-                console.error('[Sync] Falha de internet:', error);
+                console.error(`[AppSheet Sync] Conexão Perdida com Google Apps Script:`, error);
                 break;
             }
         }
         
         if (origLength > 0 && queue.length < origLength) {
-            window.showToast("Dados sincronizados com a Planilha Mestra");
+            window.showToast(`Dados sincronizados com sucesso para nuvem! Restam ${queue.length} pacotes.`);
         }
     }
 
@@ -2096,88 +2295,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 15. CÂMERA NATIVA (WEBRTC) & COMPRESSÃO
+    // 15. CÂMERA NATIVA (INPUT FILE) & COMPRESSÃO
     // ==========================================
-    const cameraModal = document.getElementById('camera-capture-modal');
-    const videoStream = document.getElementById('camera-stream');
+    const cameraInput = document.getElementById('camera-native-input');
     const cameraCanvas = document.getElementById('camera-canvas');
-    let currentStream = null;
     let cameraTarget = null; // 'novo-aluno' ou 'perfil'
-    let currentFacingMode = 'user'; // 'environment' (traseira) ou 'user' (selfie)
 
-    window.abrirCamera = async function(target, preferredMode = 'environment') {
+    window.abrirCamera = function(target, preferredMode = 'environment') {
         cameraTarget = target;
-        currentFacingMode = preferredMode;
-        if(cameraModal) cameraModal.classList.remove('hidden');
-        await iniciarStream();
+        if(cameraInput) {
+            if (preferredMode === 'user') {
+                cameraInput.setAttribute('capture', 'user');
+            } else {
+                cameraInput.setAttribute('capture', 'environment');
+            }
+            cameraInput.click(); // Dispara o popup nativo de câmera do mobile
+        }
     }
 
-    async function iniciarStream() {
-        pararCamera(false);
-        try {
-            const constraints = {
-                video: { facingMode: currentFacingMode }
+    if(cameraInput) {
+        cameraInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const MAX_WIDTH = 800;
+                    let scale = 1;
+                    if (img.width > MAX_WIDTH) {
+                        scale = MAX_WIDTH / img.width;
+                    }
+
+                    const newWidth = Math.floor(img.width * scale);
+                    const newHeight = Math.floor(img.height * scale);
+
+                    if(cameraCanvas) {
+                        cameraCanvas.width = newWidth;
+                        cameraCanvas.height = newHeight;
+                        
+                        const ctx = cameraCanvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+                        // Compressão agressiva em JPEG 80%
+                        const base64Img = cameraCanvas.toDataURL('image/jpeg', 0.8);
+                        
+                        processarFotoCapturada(cameraTarget, base64Img);
+                    }
+                    // Reset input
+                    cameraInput.value = '';
+                };
+                img.src = event.target.result;
             };
-            currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-            if(videoStream) videoStream.srcObject = currentStream;
-        } catch (err) {
-            alert('Não foi possível acessar a câmera: ' + err.message + ' (Tente Escolher Arquivo na Galeria)');
-            pararCamera(true);
-        }
+            reader.readAsDataURL(file);
+        });
     }
-
-    function pararCamera(esconderModal = true) {
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
-            currentStream = null;
-        }
-        if (videoStream) {
-            videoStream.srcObject = null;
-        }
-        if (esconderModal && cameraModal) {
-            cameraModal.classList.add('hidden');
-        }
-    }
-
-    // Botões Câmera Modal
-    document.getElementById('btn-close-camera')?.addEventListener('click', () => pararCamera(true));
-
-    document.getElementById('btn-switch-camera')?.addEventListener('click', () => {
-        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-        iniciarStream();
-    });
-
-    document.getElementById('btn-capture-photo')?.addEventListener('click', () => {
-        if (!currentStream || !videoStream || !cameraCanvas) return;
-        
-        // Pega as dimensões reais do video (podem variar do CSS)
-        const vWidth = videoStream.videoWidth;
-        const vHeight = videoStream.videoHeight;
-        
-        if (vWidth === 0 || vHeight === 0) return;
-
-        // Limite máximo de largura: 800px pra evitar sobrecarregar BD e Payload Google Apps Script
-        const MAX_WIDTH = 800;
-        let scale = 1;
-        if (vWidth > MAX_WIDTH) {
-            scale = MAX_WIDTH / vWidth;
-        }
-
-        const newWidth = Math.floor(vWidth * scale);
-        const newHeight = Math.floor(vHeight * scale);
-
-        cameraCanvas.width = newWidth;
-        cameraCanvas.height = newHeight;
-        
-        const ctx = cameraCanvas.getContext('2d');
-        ctx.drawImage(videoStream, 0, 0, newWidth, newHeight);
-
-        // Compressão em JPEG 80% (Base64)
-        const base64Img = cameraCanvas.toDataURL('image/jpeg', 0.8);
-        pararCamera(true);
-
-        processarFotoCapturada(cameraTarget, base64Img);
-    });
 
     function processarFotoCapturada(target, base64Img) {
         if (target === 'novo-aluno') {
