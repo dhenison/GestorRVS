@@ -570,64 +570,101 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ficha-pai').textContent = aluno.nomePai || '--';
         document.getElementById('ficha-endereco').textContent = aluno.endereco || '--';
 
-        // 2. Extrator de Frequência (Percorre o Cache Global)
+        // 2. Extrator de Frequência (Anual e Bimestral)
         const dbFreq = JSON.parse(localStorage.getItem('rvs_frequencia')) || {};
-        let tP = 0, tF = 0, tPA = 0, tFJ = 0;
-        let htmlFreq = '';
-        
-        // As chaves são geralmente Datas (ex: 2026-04-20)
+        let historicoCompleto = []; 
+
         Object.keys(dbFreq).forEach(keyDia => {
             const turmasDia = dbFreq[keyDia];
-            // Precisamos varrer todas as turmas daquele dia para achar o CPF do aluno
             Object.keys(turmasDia).forEach(turmaVar => {
-                const registros = turmasDia[turmaVar];
-                if (registros[aluno.cpf]) {
-                    const reg = registros[aluno.cpf];
-                    
-                    // Lógica independente de Atraso e Visualização Analítica (Graves)
-                    if (reg.e === 'PA' || reg.s === 'PA') {
-                        tPA++; // Histórico de Pontualidade pura, independente do dia
-                    }
-
-                    // Cálculo da Frequência Consolidada do Dia (Boleto final do aluno)
-                    let finalConsolidado = '';
+                if (turmasDia[turmaVar][aluno.cpf]) {
+                    const reg = turmasDia[turmaVar][aluno.cpf];
+                    let finalConsolidado = 'P';
                     if (reg.e === 'FJ' || reg.s === 'FJ') finalConsolidado = 'FJ';
-                    else if (reg.e === 'F' || reg.s === 'F') finalConsolidado = 'F'; // Qualquer F quebra o dia pra F
-                    else finalConsolidado = 'P'; // Se rolou P ou P+PA (Atraso com permanência), dia vale PRESENÇA (P) no diário!
+                    else if (reg.e === 'F' || reg.s === 'F') finalConsolidado = 'F';
                     
-                    if (finalConsolidado === 'P') tP++;
-                    else if (finalConsolidado === 'F') tF++;
-                    else if (finalConsolidado === 'FJ') tFJ++;
-
-                    // Renderiza histórico detalhado caso haja anomalias (incluindo o próprio atraso)
-                    if (reg.e === 'F' || reg.s === 'F' || reg.e === 'PA' || reg.s === 'PA' || reg.e === 'FJ' || reg.s === 'FJ') {
-                        const dataSplited = keyDia.split('-');
-                        const diaLegivel = dataSplited.length === 3 ? `${dataSplited[2]}/${dataSplited[1]}` : keyDia;
-                        
-                        const makeSpan = (val) => {
-                            if(val === 'F') return '<span class="text-danger fw-bold">Falta</span>';
-                            if(val === 'PA') return '<span class="text-warning text-dark fw-bold">Atraso</span>';
-                            if(val === 'FJ') return '<span class="text-info text-dark fw-bold">Justif.</span>';
-                            return 'Presença';
-                        };
-
-                        htmlFreq += `<tr><td class="text-secondary fw-medium">${diaLegivel}</td><td>${makeSpan(reg.e)}</td><td>${makeSpan(reg.s)}</td></tr>`;
-                    }
+                    let temPA = (reg.e === 'PA' || reg.s === 'PA');
+                    historicoCompleto.push({
+                         dataObjStr: keyDia, 
+                         reg: reg, 
+                         finalConsolidado: finalConsolidado,
+                         temPA: temPA
+                    });
                 }
             });
         });
 
-        document.getElementById('dossie-tot-p').textContent = tP;
-        document.getElementById('dossie-tot-f').textContent = tF;
-        document.getElementById('dossie-tot-pa').textContent = tPA;
-        const domFJ = document.getElementById('dossie-tot-fj');
-        if (domFJ) domFJ.textContent = tFJ;
-        
-        if (htmlFreq !== '') {
-            document.getElementById('dossie-historico-freq').innerHTML = htmlFreq;
-        } else {
-            document.getElementById('dossie-historico-freq').innerHTML = `<tr><td colspan="3" class="text-center text-muted small py-3">Nenhum evento grave computado.</td></tr>`;
+        // TOTAIS CONSOLIDADOS DO ANO LETIVO
+        let anoP = 0, anoF = 0, anoPA = 0, anoFJ = 0;
+        historicoCompleto.forEach(h => {
+             if (h.temPA) anoPA++;
+             if (h.finalConsolidado === 'P') anoP++;
+             if (h.finalConsolidado === 'F') anoF++;
+             if (h.finalConsolidado === 'FJ') anoFJ++;
+        });
+
+        const domTotPAno = document.getElementById('dossie-tot-p-ano');
+        if(domTotPAno) {
+            domTotPAno.textContent = anoP;
+            document.getElementById('dossie-tot-f-ano').textContent = anoF;
+            document.getElementById('dossie-tot-pa-ano').textContent = anoPA;
+            document.getElementById('dossie-tot-fj-ano').textContent = anoFJ;
         }
+
+        // MOTOR DE RENDERIZAÇÃO BIMESTRAL
+        function renderFrequenciaBimestre() {
+            const domSelectBimestre = document.getElementById('dossie-filtro-bimestre');
+            const biSelecionado = domSelectBimestre ? domSelectBimestre.value : getBimestreAtualRange(new Date()).id;
+            const bDef = BIMESTRES_2026.find(b => b.id === String(biSelecionado)) || BIMESTRES_2026[0];
+            
+            let biP = 0, biF = 0, biPA = 0, biFJ = 0;
+            let htmlFreq = '';
+
+            historicoCompleto.forEach(h => {
+                 // Filtra só as entradas que pertencem ao range do bimestre selecionado
+                 if (h.dataObjStr >= bDef.inicio && h.dataObjStr <= bDef.fim) {
+                     if (h.temPA) biPA++;
+                     if (h.finalConsolidado === 'P') biP++;
+                     if (h.finalConsolidado === 'F') biF++;
+                     if (h.finalConsolidado === 'FJ') biFJ++;
+
+                     // Renderiza log de anomalia (Qualquer coisa diferente da perfeição, exibe embaixo)
+                     if (h.finalConsolidado !== 'P' || h.temPA) {
+                          const dataSplited = h.dataObjStr.split('-');
+                          const diaLegivel = dataSplited.length === 3 ? `${dataSplited[2]}/${dataSplited[1]}` : h.dataObjStr;
+                          const makeSpan = (val) => {
+                              if(val === 'F') return '<span class="text-danger fw-bold">Falta</span>';
+                              if(val === 'PA') return '<span class="text-warning text-dark fw-bold">Atraso</span>';
+                              if(val === 'FJ') return '<span class="text-info text-dark fw-bold">Justif.</span>';
+                              return 'Presença';
+                          };
+                          htmlFreq += `<tr><td class="text-secondary fw-medium align-middle">${diaLegivel}</td><td class="align-middle">${makeSpan(h.reg.e)}</td><td class="align-middle">${makeSpan(h.reg.s)}</td></tr>`;
+                     }
+                 }
+            });
+
+            document.getElementById('dossie-tot-p').textContent = biP;
+            document.getElementById('dossie-tot-f').textContent = biF;
+            document.getElementById('dossie-tot-pa').textContent = biPA;
+            document.getElementById('dossie-tot-fj').textContent = biFJ;
+
+            const boxHistorico = document.getElementById('dossie-historico-freq');
+            if (boxHistorico) {
+                if (htmlFreq !== '') {
+                    boxHistorico.innerHTML = htmlFreq;
+                } else {
+                    boxHistorico.innerHTML = `<tr><td colspan="3" class="text-center text-muted small py-3"><i class="ph ph-check-circle text-success fs-5"></i><br>Nenhum evento grave neste bimestre.</td></tr>`;
+                }
+            }
+        }
+
+        const domSelectBimestre = document.getElementById('dossie-filtro-bimestre');
+        if (domSelectBimestre) {
+             domSelectBimestre.value = getBimestreAtualRange(new Date()).id; // Auto Select dinâmico ao abrir a ficha
+             domSelectBimestre.onchange = renderFrequenciaBimestre; // Repinta os cards azuis ao mudar
+        }
+
+        renderFrequenciaBimestre(); // Executa a pintura primária imediatamente
 
         // 3. Extrator de Ocorrências e Histórico Transferências
         const dbOcorrencias = JSON.parse(localStorage.getItem('rvs_ocorrencias')) || {};
@@ -1619,7 +1656,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ==========================================
     // 11. DASHBOARD DINÂMICO
-    // ==========================================
+    const BIMESTRES_2026 = [
+        { id: '1', nome: '1º Bimestre', inicio: '2026-02-03', fim: '2026-04-18' },
+        { id: '2', nome: '2º Bimestre', inicio: '2026-04-22', fim: '2026-06-30' },
+        { id: '3', nome: '3º Bimestre', inicio: '2026-08-01', fim: '2026-09-30' },
+        { id: '4', nome: '4º Bimestre', inicio: '2026-10-01', fim: '2026-12-20' }
+    ];
+
+    function getBimestreAtualRange(dataObj) {
+        const d = dataObj.toISOString().split('T')[0];
+        for (let b of BIMESTRES_2026) {
+            if (d >= b.inicio && d <= b.fim) return b;
+        }
+        if (d < '2026-02-03') return BIMESTRES_2026[0];
+        if (d > '2026-12-20') return BIMESTRES_2026[3];
+        if (d > '2026-06-30' && d < '2026-08-01') return BIMESTRES_2026[2]; // Férias jul
+        return BIMESTRES_2026[0];
+    }
+
     function getTurnoFromTurma(turmaStr) {
         if(!turmaStr) return 'ALL';
         if(turmaStr.startsWith('M1MN') || turmaStr.startsWith('M2MN') || turmaStr.startsWith('M3MN')) return 'M';
@@ -1634,7 +1688,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const filtroTurnoDom = document.getElementById('dash-filtro-turno');
         const turnoSelecionado = filtroTurnoDom ? filtroTurnoDom.value : 'ALL';
         
-        // Obter bases de dados
+        const filtroBimDom = document.getElementById('dash-filtro-bimestre');
+        let biSelecionado = filtroBimDom ? filtroBimDom.value : getBimestreAtualRange(new Date()).id;
+        
+        // Auto-selecionar Bimestre Padrão no primeiro Load
+        if (filtroBimDom && filtroBimDom.value === '') {
+            biSelecionado = getBimestreAtualRange(new Date()).id;
+            filtroBimDom.value = biSelecionado;
+        }
+
+        const badge = document.getElementById('dash-badge-bimestre');
+        if (badge) {
+            if (biSelecionado === 'ALL') {
+                badge.innerHTML = `<i class="ph ph-calendar"></i> Visão Global Anual`;
+                badge.className = "badge bg-dark fs-6 py-2 px-3 me-2 border border-secondary border-opacity-50";
+            } else {
+                badge.innerHTML = `<i class="ph ph-calendar"></i> Seleção: ${biSelecionado}º Bimestre`;
+                badge.className = "badge bg-primary fs-6 py-2 px-3 me-2 shadow-sm";
+            }
+        }
+
+        // Obter bases de dados globais
         const dadosAlunos = JSON.parse(localStorage.getItem('rvs_alunos_cadastrados')) || [];
         const dadosFreq = JSON.parse(localStorage.getItem('rvs_frequencia')) || {};
         const dadosOcorrencias = JSON.parse(localStorage.getItem('rvs_ocorrencias')) || {};
@@ -1647,8 +1721,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const cpfsNoTurno = alunosFiltrados.map(a => a.cpf);
         const turmasNoTurno = [...new Set(alunosFiltrados.map(a => a.turma))];
 
+        let datasDisponiveis = Object.keys(dadosFreq).sort();
+        
+        // CORTAR DATAS PELO BIMESTRE
+        if (biSelecionado !== 'ALL') {
+            const bDef = BIMESTRES_2026.find(b => b.id === String(biSelecionado));
+            if (bDef) {
+                 datasDisponiveis = datasDisponiveis.filter(d => d >= bDef.inicio && d <= bDef.fim);
+            }
+        }
+
         // ==========================================
-        // 1. STATUS DE LANÇAMENTO (Hoje)
+        // 1. STATUS DE LANÇAMENTO (Hoje - Independe do Bimestre Análise Básica)
         // ==========================================
         const hojeStr = new Date().toISOString().split('T')[0];
         const totalTurmasTrabalhando = turmasNoTurno.length;
@@ -1664,9 +1748,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (domStatusLancamento) domStatusLancamento.textContent = `${turmasLancadasHoje}/${totalTurmasTrabalhando}`;
 
         // ==========================================
-        // 2. HOJE VS. MÉDIA HISTÓRICA DE FALTAS
+        // 2. HOJE VS. MÉDIA HISTÓRICA DO PERÍODO
         // ==========================================
-        const datasDisponiveis = Object.keys(dadosFreq).sort();
         let totalFaltasHistorico = 0;
         let totalDiasHistorico = datasDisponiveis.length;
 
@@ -1786,16 +1869,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ==========================================
-        // 4. ALERTA CRÍTICO: Risco de Evasão (25% ou 3 Consecutivas)
+        // 4. ALERTA CRÍTICO: Risco de Evasão (20% ou 3 Consecutivas)
         // ==========================================
         const tbodyEvasao = document.getElementById('dash-evasao-tbody');
         if (tbodyEvasao) {
             let vulneraveis = [];
-            const limiteFaltas = 12; // Base de 50 dias letivos bimestral (25% = 12)
+            // Base de letivos bimestral = 50 dias (20% = 10 faltas)
+            // Se tiver olhando pro ano todo (ALL), usa métrica bruta de 40 faltas
+            const limiteFaltas = biSelecionado === 'ALL' ? 40 : 10; 
 
             alunosFiltrados.forEach(al => {
                 let historicoAluno = [];
-                // Reconstruir linha do tempo do aluno
+                // Reconstruir linha do tempo do aluno recém fatiada
                 datasDisponiveis.forEach(d => {
                     let statusDia = 'P'; // Default
                     if (dadosFreq[d] && dadosFreq[d][al.turma] && dadosFreq[d][al.turma][al.cpf]) {
@@ -1818,7 +1903,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (totaisGlobaisF >= limiteFaltas || consecutivasRecentes >= 3) {
-                    let mot = totaisGlobaisF >= limiteFaltas ? 'Estourou 25%' : 'Falta Consecutiva (>3)';
+                    let mot = totaisGlobaisF >= limiteFaltas ? 'Estourou 20%' : 'Falta Consecutiva (>3)';
                     vulneraveis.push({ aluno: al.aluno, cpf: al.cpf, turma: al.turma, totalF: totaisGlobaisF, motivo: mot });
                 }
             });
@@ -1944,6 +2029,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const domFiltroTurno = document.getElementById('dash-filtro-turno');
     if (domFiltroTurno) domFiltroTurno.addEventListener('change', atualizarDashboard);
+    
+    const domFiltroBim = document.getElementById('dash-filtro-bimestre');
+    if (domFiltroBim) domFiltroBim.addEventListener('change', atualizarDashboard);
 
     // Inicialização final do app
     atualizarDashboard();

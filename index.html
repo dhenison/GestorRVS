@@ -139,13 +139,22 @@
                         <h1 class="h3 fw-bold mb-1">Inteligência Educacional</h1>
                         <p class="text-secondary mb-0">BI de Assiduidade e Risco Escolar.</p>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <select class="form-select bg-light fw-bold" id="dash-filtro-turno" style="width: 200px;">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="badge bg-primary fs-6 py-2 px-3 me-2" id="dash-badge-bimestre"><i class="ph ph-calendar"></i> Carregando Ano Letivo...</span>
+                        <select class="form-select bg-light fw-bold" id="dash-filtro-bimestre" style="width: 160px;">
+                            <option value="1">1º Bimestre</option>
+                            <option value="2">2º Bimestre</option>
+                            <option value="3">3º Bimestre</option>
+                            <option value="4">4º Bimestre</option>
+                            <option value="ALL">Todo o Ano</option>
+                        </select>
+                        <select class="form-select bg-light fw-bold" id="dash-filtro-turno" style="width: 170px;">
                             <option value="ALL">📍 Todos os Turnos</option>
                             <option value="M">☀️ Manhã</option>
                             <option value="T">🌤️ Tarde</option>
                             <option value="N">🌙 Noite</option>
                         </select>
+
                         <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-acoes-globais"><i class="ph ph-plus"></i> Nova Ação</button>
                     </div>
                 </div>
@@ -194,8 +203,8 @@
                     <div class="col-12 col-xl-7">
                         <div class="card border-0 shadow-sm h-100 border-start border-danger border-4">
                             <div class="card-body">
-                                <h5 class="text-danger mb-2"><i class="ph ph-warning-circle"></i> Alerta Crítico: Limite de 25% ou Faltas Consecutivas</h5>
-                                <p class="text-secondary small mb-3">Algoritmo listando alunos que ultrapassaram 12 faltas no bimestre ou possuem sequenciais recentes.</p>
+                                <h5 class="text-danger mb-2"><i class="ph ph-warning-circle"></i> Alerta Crítico: Limite de 20% ou Faltas Consecutivas</h5>
+                                <p class="text-secondary small mb-3">Algoritmo listando alunos que ultrapassaram 10 faltas no período ou possuem sequenciais recentes (Evasão Iminente).</p>
                                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                                     <table class="table table-hover align-middle mb-0 text-nowrap">
                                         <thead class="table-light sticky-top">
@@ -720,29 +729,66 @@
 
                     <!-- TAB 2: FREQUÊNCIA -->
                     <div class="tab-pane fade" id="tab-freq" role="tabpanel">
+                        <h6 class="fw-bold text-secondary mb-2 border-bottom pb-1"><i class="ph ph-calendar"></i> Total Consolidado (Ano Letivo 2026)</h6>
                         <div class="row text-center mb-4 g-2">
                             <div class="col-6 col-sm-3">
                                 <div class="p-2 bg-success bg-opacity-10 rounded h-100">
-                                    <h4 class="text-success fw-bold mb-0" id="dossie-tot-p">0</h4>
+                                    <h4 class="text-success fw-bold mb-0" id="dossie-tot-p-ano">0</h4>
                                     <small class="text-secondary fw-semibold">Presenças</small>
                                 </div>
                             </div>
                             <div class="col-6 col-sm-3">
                                 <div class="p-2 bg-danger bg-opacity-10 rounded h-100">
-                                    <h4 class="text-danger fw-bold mb-0" id="dossie-tot-f">0</h4>
+                                    <h4 class="text-danger fw-bold mb-0" id="dossie-tot-f-ano">0</h4>
                                     <small class="text-secondary fw-semibold">Faltas</small>
                                 </div>
                             </div>
                             <div class="col-6 col-sm-3">
                                 <div class="p-2 bg-warning bg-opacity-10 rounded h-100">
-                                    <h4 class="text-warning fw-bold mb-0 text-dark" id="dossie-tot-pa">0</h4>
+                                    <h4 class="text-warning fw-bold mb-0 text-dark" id="dossie-tot-pa-ano">0</h4>
                                     <small class="text-secondary fw-semibold">Atrasos (PA)</small>
                                 </div>
                             </div>
                             <div class="col-6 col-sm-3">
                                 <div class="p-2 bg-info bg-opacity-10 rounded h-100">
-                                    <h4 class="text-info fw-bold mb-0 text-dark" id="dossie-tot-fj">0</h4>
+                                    <h4 class="text-info fw-bold mb-0 text-dark" id="dossie-tot-fj-ano">0</h4>
                                     <small class="text-secondary fw-semibold">Justificadas</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
+                            <h6 class="fw-bold text-primary mb-0"><i class="ph ph-sliders"></i> Análise de Bimestre</h6>
+                            <select class="form-select form-select-sm border-primary text-primary fw-bold" id="dossie-filtro-bimestre" style="width: 140px;">
+                                <option value="1">1º Bimestre</option>
+                                <option value="2">2º Bimestre</option>
+                                <option value="3">3º Bimestre</option>
+                                <option value="4">4º Bimestre</option>
+                            </select>
+                        </div>
+                        <div class="row text-center mb-4 g-2">
+                            <div class="col-6 col-sm-3">
+                                <div class="p-1 bg-light border border-success border-opacity-25 rounded h-100">
+                                    <h5 class="text-success fw-bold mb-0" id="dossie-tot-p">0</h5>
+                                    <small class="text-secondary" style="font-size:0.7rem;">Presenças</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <div class="p-1 bg-light border border-danger border-opacity-25 rounded h-100">
+                                    <h5 class="text-danger fw-bold mb-0" id="dossie-tot-f">0</h5>
+                                    <small class="text-secondary" style="font-size:0.7rem;">Faltas</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <div class="p-1 bg-light border border-warning border-opacity-25 rounded h-100">
+                                    <h5 class="text-warning fw-bold mb-0 text-dark" id="dossie-tot-pa">0</h5>
+                                    <small class="text-secondary" style="font-size:0.7rem;">Atrasos (PA)</small>
+                                </div>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <div class="p-1 bg-light border border-info border-opacity-25 rounded h-100">
+                                    <h5 class="text-info fw-bold mb-0 text-dark" id="dossie-tot-fj">0</h5>
+                                    <small class="text-secondary" style="font-size:0.7rem;">Justificadas</small>
                                 </div>
                             </div>
                         </div>
