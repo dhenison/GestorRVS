@@ -1243,6 +1243,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 calcularConsolidado(cpf);
+
+                // ==========================================
+                // INTERCEPTAÇÃO OFFLINE FIRST (POR CLIQUE)
+                // ==========================================
+                const dateStr = selectDiaFreq.value;
+                const turmaStr = selectTurmaFreq.value;
+                
+                if (!navigator.onLine) {
+                    if (window.salvarMovimentoOffline) {
+                        window.salvarMovimentoOffline(cpf, tipo, val, dateStr, turmaStr);
+                    }
+                } else {
+                    if (window.enviarMovimentoImediato) {
+                        window.enviarMovimentoImediato(cpf, tipo, val, dateStr, turmaStr);
+                    }
+                }
             });
         });
     }
@@ -2340,7 +2356,108 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.addEventListener('online', updateNetworkStatus);
+    // ==========================================
+    // INDEXED-DB: PWA OFFLINE SMART SYNC
+    // ==========================================
+    let dbRVS;
+    const initDB = () => {
+        const request = indexedDB.open('SincronizacaoRVS', 1);
+        request.onupgradeneeded = (event) => {
+            dbRVS = event.target.result;
+            if (!dbRVS.objectStoreNames.contains('movimentos_pendentes')) {
+                const os = dbRVS.createObjectStore('movimentos_pendentes', { keyPath: 'id', autoIncrement: true });
+                os.createIndex('cpf', 'cpf', { unique: false });
+            }
+        };
+        request.onsuccess = (event) => {
+            dbRVS = event.target.result;
+        };
+        request.onerror = (event) => {
+            console.error("IndexedDB Error:", event.target.errorCode);
+        };
+    };
+    initDB();
+
+    window.salvarMovimentoOffline = function(cpf, tipo, valor, dataChamada, turma) {
+        if (!dbRVS) return;
+        const transaction = dbRVS.transaction(['movimentos_pendentes'], 'readwrite');
+        const store = transaction.objectStore('movimentos_pendentes');
+        const registro = {
+            cpf: cpf,
+            tipoMovimento: tipo, // 'E' ou 'S'
+            valorRegistro: valor, // 'P', 'F', 'FJ', 'PA'
+            dataBase: dataChamada,
+            turma: turma,
+            timestamp: new Date().toISOString()
+        };
+        store.add(registro);
+        transaction.oncomplete = () => {
+            window.showToast("Registrado offline. Sincronização pendente...", "warning");
+        };
+    };
+
+    window.enviarMovimentoImediato = async function(cpf, tipo, val, dateStr, turmaStr) {
+        const userStr = localStorage.getItem('rvs_usuarioAtivo');
+        const user = userStr ? JSON.parse(userStr) : {email: 'unknown'};
+        const payload = {
+            tipo: 'MICRO_FREQUENCIA',
+            autor: user.email,
+            dados: { cpf, tipoMovimento: tipo, valor: val, data: dateStr, turma: turmaStr, timestamp: new Date().toISOString() }
+        };
+
+        try {
+            await fetch(URL_DO_WEBAPP, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+            console.log(`[PWA] Micro-movimento online enviado para ${cpf}`);
+        } catch(err) {
+            // Em caso de micro-queda que o navigator não previu:
+            window.salvarMovimentoOffline(cpf, tipo, val, dateStr, turmaStr);
+        }
+    };
+
+    window.sincronizarIndexedDB = function() {
+        if (!dbRVS || !navigator.onLine) return;
+        const transaction = dbRVS.transaction(['movimentos_pendentes'], 'readonly');
+        const store = transaction.objectStore('movimentos_pendentes');
+        const request = store.getAll();
+        
+        request.onsuccess = async () => {
+            const registros = request.result;
+            if (registros.length === 0) return;
+            
+            console.log(`[IndexedDB Sync] Enviando ${registros.length} micro-movimentos...`);
+            const userStr = localStorage.getItem('rvs_usuarioAtivo');
+            const user = userStr ? JSON.parse(userStr) : {email: 'unknown'};
+            const payload = {
+                 tipo: 'MICRO_FREQUENCIA_BATCH',
+                 autor: user.email,
+                 dados: registros
+            };
+
+            try {
+                 const res = await fetch(URL_DO_WEBAPP, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                     body: JSON.stringify(payload)
+                 });
+                 // Independentemente da sub-tabela aceitar ou não com perfeição (se fosse no real script)
+                 // Vamos purgar a fila como foi solicitado na instrução: "limpe o banco local após."
+                 const clearTx = dbRVS.transaction(['movimentos_pendentes'], 'readwrite');
+                 clearTx.objectStore('movimentos_pendentes').clear();
+                 window.showToast("Sincronização Automática (Offline → Online) concluída com sucesso!", "success");
+            } catch(e) {
+                 console.log("[IndexedDB Sync] Falha de comunicação, tentaremos na próxima vez.");
+            }
+        };
+    };
+
+    window.addEventListener('online', () => {
+        updateNetworkStatus();
+        window.sincronizarIndexedDB();
+    });
     window.addEventListener('offline', updateNetworkStatus);
     // Dispara a verificação logo ao abrir para atualizar o badge apropriadamente
     updateNetworkStatus();

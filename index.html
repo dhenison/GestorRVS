@@ -16,8 +16,10 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
-    <!-- PWA Manifest -->
+    <!-- PWA Manifest & Meta Tags -->
     <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FBBF24">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=G+R&background=1E3A8A&color=fff&size=192">
     
     <!-- CSS Principal -->
     <link rel="stylesheet" href="css/style.css">
@@ -838,6 +840,21 @@
             });
             observer.observe(o, {attributes: true});
         });
+
+        // ==========================================
+        // PWA SERVICE WORKER REGISTRATION
+        // ==========================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registrado com sucesso: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('Falha ao registrar o Service Worker: ', err);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
