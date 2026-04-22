@@ -1732,9 +1732,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ==========================================
-        // 1. STATUS DE LANÇAMENTO (Hoje - Independe do Bimestre Análise Básica)
+        // 0. POPULAR FILTRO DE DIAS (Seletor Dinâmico)
         // ==========================================
-        const hojeStr = new Date().toISOString().split('T')[0];
+        const filtroDiaDom = document.getElementById('dash-filtro-dia');
+        if (filtroDiaDom) {
+            const oldValue = filtroDiaDom.value;
+            filtroDiaDom.innerHTML = '<option value="HOJE">📍 Dia de Hoje</option>';
+            
+            [...datasDisponiveis].reverse().forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                const dBr = d.split('-').reverse().join('/');
+                opt.textContent = `📅 ${dBr}`;
+                filtroDiaDom.appendChild(opt);
+            });
+
+            // Reseta a seleção ou mantém
+            if (oldValue && (oldValue === 'HOJE' || datasDisponiveis.includes(oldValue))) {
+                filtroDiaDom.value = oldValue;
+            } else if (datasDisponiveis.length > 0) {
+                // Se o Dia selecionado não existe no novo bimestre, e não era 'HOJE', reseta.
+            }
+        }
+
+        // ==========================================
+        // 1. STATUS DE LANÇAMENTO (Focado no Dia Escolhido)
+        // ==========================================
+        let hojeReal = new Date().toISOString().split('T')[0];
+        let hojeStr = hojeReal;
+        if (filtroDiaDom && filtroDiaDom.value && filtroDiaDom.value !== 'HOJE') {
+            hojeStr = filtroDiaDom.value;
+        }
+
+        const domStatusTitle = document.querySelector('#dash-status-lancamento').previousElementSibling;
+        if (domStatusTitle) {
+             domStatusTitle.textContent = (hojeStr === hojeReal) ? "STATUS DE LANÇAMENTO (HOJE)" : `STATUS DE LANÇAMENTO (${hojeStr.split('-').reverse().join('/')})`;
+        }
+
         const totalTurmasTrabalhando = turmasNoTurno.length;
         let turmasLancadasHoje = 0;
 
@@ -1813,60 +1847,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // ==========================================
-        // 3. GRÁFICO DE TENDÊNCIA (Últimos 7 dias)
-        // ==========================================
-        const ctx = document.getElementById('dash-chart');
-        if (ctx && window.Chart) {
-            const ultimos7Dias = datasDisponiveis.slice(-7);
-            const labelsData = [];
-            const pontosDataFaltas = [];
-
-            ultimos7Dias.forEach(d => {
-                const dSplited = d.split('-');
-                labelsData.push(`${dSplited[2]}/${dSplited[1]}`);
-                
-                let fNoDia = 0;
-                Object.keys(dadosFreq[d]).forEach(tk => {
-                    if(turnoSelecionado === 'ALL' || getTurnoFromTurma(tk) === turnoSelecionado) {
-                         Object.values(dadosFreq[d][tk]).forEach(reg => {
-                             if(reg.e === 'F' || reg.s === 'F') fNoDia++;
-                         });
-                    }
-                });
-                pontosDataFaltas.push(fNoDia);
-            });
-
-            if (dashChartInstance) {
-                dashChartInstance.destroy();
-            }
-
-            dashChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labelsData,
-                    datasets: [{
-                        label: 'Faltas Registradas',
-                        data: pontosDataFaltas,
-                        borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.3,
-                        pointBackgroundColor: '#1E3A8A'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [2, 4] } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-        }
 
         // ==========================================
         // 4. ALERTA CRÍTICO: Risco de Evasão (20% ou 3 Consecutivas)
@@ -2032,6 +2012,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const domFiltroBim = document.getElementById('dash-filtro-bimestre');
     if (domFiltroBim) domFiltroBim.addEventListener('change', atualizarDashboard);
+
+    const domFiltroDia = document.getElementById('dash-filtro-dia');
+    if (domFiltroDia) domFiltroDia.addEventListener('change', atualizarDashboard);
 
     // Inicialização final do app
     atualizarDashboard();
